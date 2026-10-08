@@ -182,7 +182,7 @@ public class DatabaseService
 
         if (newStatus == "Finished")
         {
-            const string sql = "UPDATE records SET status = @Status, remark = @Remark, finished_date = CURDATE() WHERE id = @Id";
+            const string sql = "UPDATE records SET status = @Status, remark = @Remark, finished_date = COALESCE(finished_date, CURDATE()) WHERE id = @Id";
             await using var command = new MySqlCommand(sql, connection);
             command.Parameters.AddWithValue("@Status", newStatus);
             command.Parameters.AddWithValue("@Remark", remark ?? string.Empty);

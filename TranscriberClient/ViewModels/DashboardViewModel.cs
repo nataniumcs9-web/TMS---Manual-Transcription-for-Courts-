@@ -113,6 +113,12 @@ public partial class DashboardViewModel : ObservableObject
         return AssignedRecords.Concat(PendingRecords).Concat(SuspendedRecords).Concat(FinishedRecords).ToList();
     }
 
+    public void RefreshCalendarDisplay()
+    {
+        RefreshRecommendations();
+        RefreshSearch();
+    }
+
     private void ApplyRecords(IReadOnlyList<Record> records)
     {
         var snapshot = JsonSerializer.Serialize(records);
@@ -175,10 +181,15 @@ public partial class DashboardViewModel : ObservableObject
             record.Transcriber,
             record.Status,
             record.RecDate?.ToString("d"),
+            CalendarDateFormatter.FormatDate(record.RecDate),
             record.AppointedOn?.ToString("d"),
+            CalendarDateFormatter.FormatDate(record.AppointedOn),
             record.InsertedOn?.ToString("d"),
+            CalendarDateFormatter.FormatDate(record.InsertedOn),
             record.DistributedOn?.ToString("d"),
-            record.FinishedDate?.ToString("d")
+            CalendarDateFormatter.FormatDate(record.DistributedOn),
+            record.FinishedDate?.ToString("d"),
+            CalendarDateFormatter.FormatDate(record.FinishedDate)
         });
 
         return terms.All(term => searchable.Contains(term, StringComparison.OrdinalIgnoreCase));
@@ -220,7 +231,7 @@ public partial class DashboardViewModel : ObservableObject
         {
             var daysUntil = (record.AppointedOn!.Value.Date - DateTime.Today).Days;
             Recommendations.Add(
-                $"Appointment in {daysUntil} day{(daysUntil == 1 ? string.Empty : "s")} — File {record.FileNum}, Machine {record.MachineNum} ({record.AppointedOn.Value:d}). Review the assignment and plan completion.");
+                $"Appointment in {daysUntil} day{(daysUntil == 1 ? string.Empty : "s")} — File {record.FileNum}, Machine {record.MachineNum} ({CalendarDateFormatter.FormatDate(record.AppointedOn)}). Review the assignment and plan completion.");
         }
 
         if (Recommendations.Count == 0)

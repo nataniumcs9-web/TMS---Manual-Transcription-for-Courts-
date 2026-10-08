@@ -27,9 +27,9 @@
                     <ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0" Text="From" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                <DatePicker Grid.Column="1" x:Name="StartDatePicker" Height="34" VerticalContentAlignment="Center"/>
+                <TextBox Grid.Column="1" x:Name="StartDateTextBox" Height="34" VerticalContentAlignment="Center" ToolTip="Enter yyyy-MM-dd in Gregorian mode or d MonthName yyyy in Ethiopian mode."/>
                 <TextBlock Grid.Column="2" Text="To" VerticalAlignment="Center" Margin="14,0,8,0"/>
-                <DatePicker Grid.Column="3" x:Name="EndDatePicker" Height="34" VerticalContentAlignment="Center"/>
+                <TextBox Grid.Column="3" x:Name="EndDateTextBox" Height="34" VerticalContentAlignment="Center" ToolTip="Enter yyyy-MM-dd in Gregorian mode or d MonthName yyyy in Ethiopian mode."/>
                 <TextBlock Grid.Column="4" Text="Status" VerticalAlignment="Center" Margin="14,0,8,0"/>
                 <ComboBox Grid.Column="5" x:Name="StatusComboBox" Height="34" VerticalContentAlignment="Center" SelectionChanged="Filter_Changed">
                     <ComboBoxItem Content="All statuses" Tag="All"/>
@@ -104,9 +104,9 @@
                     <DataGridTextColumn Header="Applicant" Binding="{Binding Applicant}" Width="1.2*"/>
                     <DataGridTextColumn Header="Defendant" Binding="{Binding Defendant}" Width="1.2*"/>
                     <DataGridTextColumn Header="Judge" Binding="{Binding Judge}" Width="*"/>
-                    <DataGridTextColumn Header="Recorded" Binding="{Binding RecDate, StringFormat=d}" Width="95"/>
-                    <DataGridTextColumn Header="Appointment" Binding="{Binding AppointedOn, StringFormat=d}" Width="100"/>
-                    <DataGridTextColumn Header="Finished" Binding="{Binding FinishedDate, StringFormat=d}" Width="95"/>
+                    <DataGridTextColumn Header="Recorded" Binding="{Binding RecDate, Converter={StaticResource CalendarDateConverter}}" Width="120"/>
+                    <DataGridTextColumn Header="Appointment" Binding="{Binding AppointedOn, Converter={StaticResource CalendarDateConverter}}" Width="130"/>
+                    <DataGridTextColumn Header="Finished" Binding="{Binding FinishedDate, Converter={StaticResource CalendarDateConverter}}" Width="120"/>
                 </DataGrid.Columns>
             </DataGrid>
         </Border>

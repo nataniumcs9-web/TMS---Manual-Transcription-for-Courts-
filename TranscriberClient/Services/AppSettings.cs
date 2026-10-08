@@ -191,6 +191,7 @@ public sealed record UiPreferences
     public bool MiniWindowAlwaysOnTop { get; init; } = true;
     public int AutoRefreshSeconds { get; init; } = 30;
     public bool CompactDashboard { get; init; } = true;
+    public bool UseEthiopianCalendar { get; init; }
 }
 
 public sealed record DatabaseSettings(string Server, uint Port, string Database, string Username, string Password);

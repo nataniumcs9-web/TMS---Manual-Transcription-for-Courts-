@@ -9,16 +9,41 @@
         </Grid.RowDefinitions>
 
         <Border Grid.Row="0" Background="{StaticResource BrandBrush}" CornerRadius="10,10,0,0" Padding="20,14">
-            <DockPanel>
-                <Border Width="72" Height="72" Background="White" CornerRadius="36" Padding="7" DockPanel.Dock="Left" Margin="0,0,16,0">
+            <Border.Resources>
+                <Storyboard x:Key="RotateMarks">
+                    <DoubleAnimation Storyboard.TargetName="OuterMarkRotation" Storyboard.TargetProperty="Angle"
+                                     From="0" To="360" Duration="0:0:24" RepeatBehavior="Forever"/>
+                    <DoubleAnimation Storyboard.TargetName="InnerMarkRotation" Storyboard.TargetProperty="Angle"
+                                     From="360" To="0" Duration="0:0:17" RepeatBehavior="Forever"/>
+                </Storyboard>
+            </Border.Resources>
+            <Border.Triggers>
+                <EventTrigger RoutedEvent="Loaded">
+                    <BeginStoryboard Storyboard="{StaticResource RotateMarks}"/>
+                </EventTrigger>
+            </Border.Triggers>
+            <Grid>
+                <Grid.ColumnDefinitions><ColumnDefinition Width="72"/><ColumnDefinition Width="*"/><ColumnDefinition Width="76"/></Grid.ColumnDefinitions>
+                <Border Grid.Column="0" Width="72" Height="72" Background="White" CornerRadius="36" Padding="7" Margin="0,0,16,0">
                     <Image Source="/Assets/logo.png" Stretch="Uniform"/>
                 </Border>
-                <StackPanel VerticalAlignment="Center">
+                <StackPanel Grid.Column="1" VerticalAlignment="Center">
                     <TextBlock Text="GEDEO ZONE HIGH COURT" Foreground="White" FontSize="17" FontWeight="Bold"/>
                     <TextBlock Text="የጌዴኦ ዞን ከፍተኛ ፍርድ ቤት" Foreground="#D8E7EF" FontSize="16" FontFamily="Nyala" Margin="0,3,0,0"/>
                     <TextBlock Text="Transcriber workspace" Foreground="#B9D8E4" FontSize="12" Margin="0,2,0,0"/>
                 </StackPanel>
-            </DockPanel>
+                <Canvas Grid.Column="2" Width="70" Height="70" VerticalAlignment="Center" Opacity="0.55">
+                    <Ellipse Width="48" Height="48" Stroke="#9FD3DD" StrokeThickness="1.5"
+                             Canvas.Left="7" Canvas.Top="8" RenderTransformOrigin="0.5,0.5">
+                        <Ellipse.RenderTransform><RotateTransform x:Name="OuterMarkRotation"/></Ellipse.RenderTransform>
+                    </Ellipse>
+                    <Ellipse Width="27" Height="27" Stroke="#FFFFFF" StrokeThickness="1.5"
+                             Canvas.Left="18" Canvas.Top="18" RenderTransformOrigin="0.5,0.5">
+                        <Ellipse.RenderTransform><RotateTransform x:Name="InnerMarkRotation"/></Ellipse.RenderTransform>
+                    </Ellipse>
+                    <Ellipse Width="6" Height="6" Fill="#9FD3DD" Canvas.Left="28" Canvas.Top="29"/>
+                </Canvas>
+            </Grid>
         </Border>
 
         <Border Grid.Row="1" Background="{StaticResource CardBrush}" CornerRadius="0,0,10,10" Padding="28,24">
@@ -45,6 +70,8 @@
                     <Button Content="Database connection settings" Height="40" Margin="0,10,0,0"
                             Background="#E9EFF5" Foreground="{StaticResource BrandBrush}" Click="DatabaseSettingsButton_Click"/>
                     <TextBlock Text="Court Transcriber Desktop" Foreground="{StaticResource MutedBrush}" HorizontalAlignment="Center" Margin="0,14,0,0"/>
+                    <TextBlock Text="Developer: Natnael Abebe · nataniumcs9@gmail.com"
+                               HorizontalAlignment="Center" Margin="0,6,0,0" FontSize="10" Foreground="{StaticResource MutedBrush}"/>
                 </StackPanel>
             </Grid>
         </Border>

@@ -19,9 +19,9 @@
                 <Grid Margin="18">
                     <Grid.ColumnDefinitions><ColumnDefinition Width="205"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
-                    <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="Dashboard preferences" FontWeight="Bold" FontSize="15" Margin="0,0,0,14"/>
+                    <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="Dashboard and display preferences" FontWeight="Bold" FontSize="15" Margin="0,0,0,14"/>
                     <TextBlock Grid.Row="1" Text="Automatic refresh" VerticalAlignment="Center" Margin="0,8"/>
                     <ComboBox Grid.Row="1" Grid.Column="1" x:Name="RefreshIntervalComboBox" Height="34" VerticalContentAlignment="Center" Margin="0,4">
                         <ComboBoxItem Content="15 seconds" Tag="15"/>
@@ -35,8 +35,10 @@
                         <CheckBox x:Name="AlwaysOnTopCheckBox" Content="Keep dashboard on top" Margin="0,5"/>
                         <CheckBox x:Name="CompactDashboardCheckBox" Content="Use compact rows to show more assignments" Margin="0,5"/>
                     </StackPanel>
-                    <Border Grid.Row="3" Grid.ColumnSpan="2" Background="#F3F6FA" CornerRadius="6" Padding="12" VerticalAlignment="Top" Margin="0,12,0,0">
-                        <TextBlock Text="Search filters loaded assignments instantly. The dashboard checks for server-side changes at the interval above; lower intervals use more database connections."
+                    <TextBlock Grid.Row="3" Text="Calendar display" VerticalAlignment="Center" Margin="0,8"/>
+                    <CheckBox Grid.Row="3" Grid.Column="1" x:Name="EthiopianCalendarCheckBox" Content="Show dates in the Ethiopian calendar (E.C.)" VerticalAlignment="Center" Margin="0,5"/>
+                    <Border Grid.Row="4" Grid.ColumnSpan="2" Background="#F3F6FA" CornerRadius="6" Padding="12" VerticalAlignment="Top" Margin="0,12,0,0">
+                        <TextBlock Text="Date display changes only how dates appear and are entered. Dates stored in the court database remain Gregorian."
                                    TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}"/>
                     </Border>
                 </Grid>

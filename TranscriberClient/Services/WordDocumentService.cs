@@ -386,7 +386,7 @@ public class WordDocumentService
         {
             $"Transcription for: {fileNum}_{machineNum}",
             $"Recorder: {record.Recorder}",
-            $"Date: {record.RecDate:yyyy-MM-dd}",
+            $"Date: {CalendarDateFormatter.FormatDate(record.RecDate)}",
             $"Applicant: {record.Applicant}",
             $"Defendant: {record.Defendant}",
             $"Trial: {record.Trial}",

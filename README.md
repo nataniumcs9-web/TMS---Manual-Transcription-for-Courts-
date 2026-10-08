@@ -52,7 +52,7 @@ The audio base URL can be set in `TranscriberClient/appsettings.json`. Transcrip
 
 ### 3. Install the desktop application
 
-- Run `installer\output\GZHC-Transcriber-Setup-1.0.1.exe` for the standard Windows installation wizard. It shows the install folder, Start Menu group, shortcut choices, install progress, and a finish page with an optional launch checkbox. Setup registers the app in Windows' installed-apps/uninstall list and creates an uninstaller; the default is a per-user install under `%LOCALAPPDATA%\Programs`, so it does not require administrator rights. The installer can be uninstalled or modified from Windows **Installed apps** / **Programs and Features**.
+- Run `installer\output\GZHC-Transcriber-Setup-1.0.2.exe` for the standard Windows installation wizard. It shows the install folder, Start Menu group, shortcut choices, install progress, and a finish page with an optional launch checkbox. Setup registers the app in Windows' installed-apps/uninstall list and creates an uninstaller; the default is a per-user install under `%LOCALAPPDATA%\Programs`, so it does not require administrator rights. The installer can be uninstalled or modified from Windows **Installed apps** / **Programs and Features**.
 - To create that installer from source, install the .NET 8 SDK and Inno Setup 6, then run `installer\build-installer.ps1` from PowerShell in the repository. The self-contained application does not need a separate .NET runtime on the target workstation.
 - Alternatively, distribute and run `TranscriberClient\publish\win-x64\TranscriberClient.exe`. Keep that executable with its published support files/folders as a release payload; do not copy only the executable out of the publish folder.
 - Do not distribute a development build from `bin\Debug`.
@@ -100,8 +100,9 @@ The audio base URL can be set in `TranscriberClient/appsettings.json`. Transcrip
 - The foot pedal uses HID vendor ID `0x0911` and listens for the mapped byte pattern: `0x04` rewind, `0x02` play/pause, `0x01` forward.
 - The app can run with a small always-on-top window while another application, such as Word, is active.
 - Audio playback position is persisted to MySQL every five seconds while audio is playing, and immediately when playback is paused or the task is closed.
-- The project-root `logo.png` is embedded into the app and shown on the splash, login, dashboard, and transcription workspace.
-- Startup displays a branded Gedeo Zone High Court splash screen in English and Amharic before opening the login window.
+- The project-root `logo.png` is embedded into the app and shown on the login, dashboard, and transcription workspace. The login screen uses subtle animated branding instead of a separate splash window.
+- **User settings → System → Calendar display** switches displayed and entered dates between Gregorian and Ethiopian calendars. Dates are converted for display and entry only; database dates continue to be stored and queried as Gregorian. Report and local-assignment date fields accept ISO `yyyy-MM-dd` in Gregorian mode and `d MonthName yyyy` (for example, `1 Meskerem 2019`) or `yyyy-MM-dd` in Ethiopian mode.
+- Developer contact: Natnael Abebe · [nataniumcs9@gmail.com](mailto:nataniumcs9@gmail.com).
 
 ## Security and Deployment
 

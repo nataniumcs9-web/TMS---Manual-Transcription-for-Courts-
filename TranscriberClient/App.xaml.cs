@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Windows;
-using System.Threading.Tasks;
 using Serilog;
 using TranscriberClient.Views;
 
@@ -9,7 +8,7 @@ namespace TranscriberClient;
 
 public partial class App : Application
 {
-    protected override async void OnStartup(StartupEventArgs e)
+    protected override void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
 
@@ -50,12 +49,6 @@ public partial class App : Application
         ShutdownMode = ShutdownMode.OnLastWindowClose;
         var loginWindow = new LoginWindow();
         MainWindow = loginWindow;
-        var splashWindow = new SplashWindow();
-        splashWindow.Show();
-
-        await Task.Delay(TimeSpan.FromMilliseconds(2200));
-
         loginWindow.Show();
-        splashWindow.Close();
     }
 }

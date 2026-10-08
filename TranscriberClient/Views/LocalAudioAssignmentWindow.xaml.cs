@@ -22,7 +22,7 @@ public partial class LocalAudioAssignmentWindow : Window
     {
         InitializeComponent();
         _currentUser = currentUser;
-        RecordedDatePicker.SelectedDate = DateTime.Today;
+        RecordedDateTextBox.Text = CalendarDateFormatter.FormatDate(DateTime.Today);
     }
 
     private void ChooseAudioButton_Click(object sender, RoutedEventArgs e)
@@ -75,9 +75,24 @@ public partial class LocalAudioAssignmentWindow : Window
             return;
         }
 
-        if (RecordedDatePicker.SelectedDate == null)
+        if (!CalendarDateFormatter.TryParseDate(RecordedDateTextBox.Text, out var recordedDate))
         {
-            ShowValidation("Choose the date the audio was recorded.");
+            ShowValidation("Enter a valid recorded date using the selected calendar format.");
+            RecordedDateTextBox.Focus();
+            return;
+        }
+
+        DateTime? appointmentDate = null;
+        if (!string.IsNullOrWhiteSpace(AppointmentDateTextBox.Text))
+        {
+            if (!CalendarDateFormatter.TryParseDate(AppointmentDateTextBox.Text, out var parsedAppointment))
+            {
+                ShowValidation("Enter a valid appointment date using the selected calendar format, or leave it blank.");
+                AppointmentDateTextBox.Focus();
+                return;
+            }
+
+            appointmentDate = parsedAppointment;
             return;
         }
 
@@ -93,8 +108,8 @@ public partial class LocalAudioAssignmentWindow : Window
                 WitnessesTextBox.Text.Trim(),
                 TrialTextBox.Text.Trim(),
                 JudgeTextBox.Text.Trim(),
-                RecordedDatePicker.SelectedDate,
-                AppointmentDatePicker.SelectedDate,
+                recordedDate,
+                appointmentDate,
                 RemarkTextBox.Text.Trim(),
                 _currentUser.Username);
             DialogResult = true;

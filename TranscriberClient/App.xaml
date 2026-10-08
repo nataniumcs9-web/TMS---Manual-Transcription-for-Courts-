@@ -1,8 +1,10 @@
 <Application x:Class="TranscriberClient.App"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:services="clr-namespace:TranscriberClient.Services"
              >
     <Application.Resources>
+        <services:CalendarDateConverter x:Key="CalendarDateConverter"/>
         <SolidColorBrush x:Key="BrandBrush" Color="#173B63"/>
         <SolidColorBrush x:Key="BrandDarkBrush" Color="#102A46"/>
         <SolidColorBrush x:Key="AccentBrush" Color="#167D8D"/>

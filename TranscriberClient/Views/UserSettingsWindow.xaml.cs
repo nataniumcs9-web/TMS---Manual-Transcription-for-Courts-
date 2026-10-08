@@ -19,6 +19,7 @@ public partial class UserSettingsWindow : Window
         var preferences = AppSettings.UiPreferences;
         AlwaysOnTopCheckBox.IsChecked = preferences.DashboardAlwaysOnTop;
         CompactDashboardCheckBox.IsChecked = preferences.CompactDashboard;
+        EthiopianCalendarCheckBox.IsChecked = preferences.UseEthiopianCalendar;
         var interval = Math.Clamp(preferences.AutoRefreshSeconds, 15, 300);
         RefreshIntervalComboBox.SelectedItem = RefreshIntervalComboBox.Items
             .OfType<ComboBoxItem>()
@@ -41,7 +42,8 @@ public partial class UserSettingsWindow : Window
             {
                 DashboardAlwaysOnTop = AlwaysOnTopCheckBox.IsChecked == true,
                 CompactDashboard = CompactDashboardCheckBox.IsChecked == true,
-                AutoRefreshSeconds = refreshSeconds
+                AutoRefreshSeconds = refreshSeconds,
+                UseEthiopianCalendar = EthiopianCalendarCheckBox.IsChecked == true
             });
             ShowResult("System settings saved for this Windows user.", isError: false);
             DialogResult = true;

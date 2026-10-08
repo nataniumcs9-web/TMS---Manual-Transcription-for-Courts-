@@ -121,6 +121,11 @@ public partial class DashboardWindow : Window
             Topmost = preferences.DashboardAlwaysOnTop;
             _refreshTimer.Interval = TimeSpan.FromSeconds(Math.Clamp(preferences.AutoRefreshSeconds, 15, 300));
             SetCompactLayout(preferences.CompactDashboard);
+            _viewModel.RefreshCalendarDisplay();
+            AssignedGrid.Items.Refresh();
+            PendingGrid.Items.Refresh();
+            SuspendedGrid.Items.Refresh();
+            FinishedGrid.Items.Refresh();
             await LoadRecordsAsync(isInitialLoad: false);
         }
     }
@@ -176,6 +181,48 @@ public partial class DashboardWindow : Window
 
         await LoadRecordsAsync(isInitialLoad: false);
         new TranscriptionWindow(record, _viewModel.CurrentUser).Show();
+    }
+
+    private async void ReturnToPendingButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { DataContext: Record record })
+        {
+            return;
+        }
+
+        var result = MessageBox.Show(
+            $"Return File {record.FileNum}, Machine {record.MachineNum} to In progress? Its finished date will be kept.",
+            "Return Assignment",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+        if (result != MessageBoxResult.Yes)
+        {
+            return;
+        }
+
+        try
+        {
+            if (record.IsLocalOnly)
+            {
+                await _localAudioService.SaveStatusAsync(record, "Pending", record.Remark);
+            }
+            else
+            {
+                await _databaseService.UpdateRecordStatusAsync(record.Id, "Pending", record.Remark);
+            }
+
+            record.Status = "Pending";
+            await LoadRecordsAsync(isInitialLoad: false);
+        }
+        catch (Exception ex)
+        {
+            Serilog.Log.Error(ex, "Could not return record {RecordId} to Pending", record.Id);
+            MessageBox.Show(
+                $"The assignment could not be returned to In progress.\n\n{ex.Message}",
+                "Return Assignment Failed",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+        }
     }
 
     private void LogoutButton_Click(object sender, RoutedEventArgs e)

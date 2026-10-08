@@ -71,9 +71,9 @@ public static class ReportExportService
             new[] { "COURT TRANSCRIPTION WORK REPORT" },
             new[] { "Transcriber", user.FullName },
             new[] { "Username", user.Username },
-            new[] { "Report period", $"{startDate:d} - {endDate:d}" },
+            new[] { "Report period", $"{CalendarDateFormatter.FormatDate(startDate)} - {CalendarDateFormatter.FormatDate(endDate)}" },
             new[] { "Status filter", status },
-            new[] { "Generated", DateTime.Now.ToString("g") },
+            new[] { "Generated", $"{CalendarDateFormatter.FormatDate(DateTime.Now)} {DateTime.Now:HH:mm}" },
             new[] { "" },
             new[] { "WORKLOAD SUMMARY", "Count" },
             new[] { "Records in report", records.Count.ToString(CultureInfo.InvariantCulture) },
@@ -139,9 +139,9 @@ public static class ReportExportService
             record.Witnesses,
             record.Trial,
             record.Judge,
-            record.RecDate?.ToString("yyyy-MM-dd") ?? string.Empty,
-            record.AppointedOn?.ToString("yyyy-MM-dd") ?? string.Empty,
-            record.FinishedDate?.ToString("yyyy-MM-dd") ?? string.Empty,
+            CalendarDateFormatter.FormatDate(record.RecDate),
+            CalendarDateFormatter.FormatDate(record.AppointedOn),
+            CalendarDateFormatter.FormatDate(record.FinishedDate),
             record.Recorder,
             record.Audio,
             record.AudioStatus,
@@ -283,7 +283,7 @@ public static class ReportExportService
         };
         document.Blocks.Add(heading);
         document.Blocks.Add(new Paragraph(new WpfRun(
-            $"{user.FullName} ({user.Username}) · {startDate:d} – {endDate:d} · Status: {status} · Generated {DateTime.Now:g}")));
+            $"{user.FullName} ({user.Username}) · {CalendarDateFormatter.FormatDate(startDate)} – {CalendarDateFormatter.FormatDate(endDate)} · Status: {status} · Generated {CalendarDateFormatter.FormatDate(DateTime.Now)} {DateTime.Now:HH:mm}")));
         var summary = new Paragraph(new WpfRun(
             $"Records: {records.Count}    Assigned: {records.Count(r => r.Status == "Assigned")}    In progress: {records.Count(r => r.Status == "Pending")}    Suspended: {records.Count(r => r.Status == "Suspended")}    Finished: {records.Count(r => r.Status == "Finished")}    Past appointments: {records.Count(r => r.Status != "Finished" && r.AppointedOn?.Date < DateTime.Today)}"));
         summary.FontWeight = FontWeights.SemiBold;
@@ -328,8 +328,8 @@ public static class ReportExportService
                 record.Applicant,
                 record.Defendant,
                 record.Judge,
-                record.RecDate?.ToString("d") ?? string.Empty,
-                record.AppointedOn?.ToString("d") ?? string.Empty,
+                CalendarDateFormatter.FormatDate(record.RecDate),
+                CalendarDateFormatter.FormatDate(record.AppointedOn),
                 record.Remark
             })
             {

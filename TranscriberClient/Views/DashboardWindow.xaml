@@ -90,8 +90,8 @@
                             <DataGridTextColumn Header="Applicant" Binding="{Binding Applicant}" Width="1.2*"/>
                             <DataGridTextColumn Header="Defendant" Binding="{Binding Defendant}" Width="1.2*"/>
                             <DataGridTextColumn Header="Witness type" Binding="{Binding WitnessType}" Width="105"/>
-                            <DataGridTextColumn Header="Recorded" Binding="{Binding RecDate, StringFormat=d}" Width="90"/>
-                            <DataGridTextColumn Header="Appointment" Binding="{Binding AppointedOn, StringFormat=d}" Width="95"/>
+                            <DataGridTextColumn Header="Recorded" Binding="{Binding RecDate, Converter={StaticResource CalendarDateConverter}}" Width="115"/>
+                            <DataGridTextColumn Header="Appointment" Binding="{Binding AppointedOn, Converter={StaticResource CalendarDateConverter}}" Width="125"/>
                             <DataGridTextColumn Header="Audio" Binding="{Binding AudioStatus}" Width="110"/>
                             <DataGridTextColumn Header="Notes" Binding="{Binding Remark}" Width="1.2*"/>
                             <DataGridTemplateColumn Header="" Width="105"><DataGridTemplateColumn.CellTemplate><DataTemplate><Button Content="Start work" Margin="4,0" Height="26" Click="StartWorkButton_Click"/></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
@@ -103,8 +103,8 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="R.N" Binding="{Binding Id}" Width="55"/><DataGridTextColumn Header="File #" Binding="{Binding FileNum}" Width="75"/><DataGridTextColumn Header="Machine #" Binding="{Binding MachineNum}" Width="85"/>
                             <DataGridTextColumn Header="Applicant" Binding="{Binding Applicant}" Width="1.2*"/><DataGridTextColumn Header="Defendant" Binding="{Binding Defendant}" Width="1.2*"/>
-                            <DataGridTextColumn Header="Witness type" Binding="{Binding WitnessType}" Width="105"/><DataGridTextColumn Header="Recorded" Binding="{Binding RecDate, StringFormat=d}" Width="90"/>
-                            <DataGridTextColumn Header="Appointment" Binding="{Binding AppointedOn, StringFormat=d}" Width="95"/><DataGridTextColumn Header="Audio" Binding="{Binding AudioStatus}" Width="110"/>
+                            <DataGridTextColumn Header="Witness type" Binding="{Binding WitnessType}" Width="105"/><DataGridTextColumn Header="Recorded" Binding="{Binding RecDate, Converter={StaticResource CalendarDateConverter}}" Width="115"/>
+                            <DataGridTextColumn Header="Appointment" Binding="{Binding AppointedOn, Converter={StaticResource CalendarDateConverter}}" Width="125"/><DataGridTextColumn Header="Audio" Binding="{Binding AudioStatus}" Width="110"/>
                             <DataGridTextColumn Header="Notes" Binding="{Binding Remark}" Width="1.2*"/>
                             <DataGridTemplateColumn Header="" Width="105"><DataGridTemplateColumn.CellTemplate><DataTemplate><Button Content="Continue" Margin="4,0" Height="26" Click="StartWorkButton_Click"/></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
                         </DataGrid.Columns>
@@ -115,8 +115,9 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="R.N" Binding="{Binding Id}" Width="55"/><DataGridTextColumn Header="File #" Binding="{Binding FileNum}" Width="75"/><DataGridTextColumn Header="Machine #" Binding="{Binding MachineNum}" Width="85"/>
                             <DataGridTextColumn Header="Applicant" Binding="{Binding Applicant}" Width="1.2*"/><DataGridTextColumn Header="Defendant" Binding="{Binding Defendant}" Width="1.2*"/>
-                            <DataGridTextColumn Header="Recorded" Binding="{Binding RecDate, StringFormat=d}" Width="90"/><DataGridTextColumn Header="Appointment" Binding="{Binding AppointedOn, StringFormat=d}" Width="95"/>
+                            <DataGridTextColumn Header="Recorded" Binding="{Binding RecDate, Converter={StaticResource CalendarDateConverter}}" Width="115"/><DataGridTextColumn Header="Appointment" Binding="{Binding AppointedOn, Converter={StaticResource CalendarDateConverter}}" Width="125"/>
                             <DataGridTextColumn Header="Audio" Binding="{Binding AudioStatus}" Width="110"/><DataGridTextColumn Header="Notes" Binding="{Binding Remark}" Width="1.5*"/>
+                            <DataGridTemplateColumn Header="" Width="140"><DataGridTemplateColumn.CellTemplate><DataTemplate><Button Content="Return to pending" Margin="4,0" Height="26" Click="ReturnToPendingButton_Click"/></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                 </TabItem>
@@ -125,9 +126,10 @@
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="R.N" Binding="{Binding Id}" Width="55"/><DataGridTextColumn Header="File #" Binding="{Binding FileNum}" Width="75"/><DataGridTextColumn Header="Machine #" Binding="{Binding MachineNum}" Width="85"/>
                             <DataGridTextColumn Header="Applicant" Binding="{Binding Applicant}" Width="1.2*"/><DataGridTextColumn Header="Defendant" Binding="{Binding Defendant}" Width="1.2*"/>
-                            <DataGridTextColumn Header="Witness type" Binding="{Binding WitnessType}" Width="105"/><DataGridTextColumn Header="Recorded" Binding="{Binding RecDate, StringFormat=d}" Width="90"/>
-                            <DataGridTextColumn Header="Appointment" Binding="{Binding AppointedOn, StringFormat=d}" Width="95"/><DataGridTextColumn Header="Finished" Binding="{Binding FinishedDate, StringFormat=d}" Width="90"/>
+                            <DataGridTextColumn Header="Witness type" Binding="{Binding WitnessType}" Width="105"/><DataGridTextColumn Header="Recorded" Binding="{Binding RecDate, Converter={StaticResource CalendarDateConverter}}" Width="115"/>
+                            <DataGridTextColumn Header="Appointment" Binding="{Binding AppointedOn, Converter={StaticResource CalendarDateConverter}}" Width="125"/><DataGridTextColumn Header="Finished" Binding="{Binding FinishedDate, Converter={StaticResource CalendarDateConverter}}" Width="115"/>
                             <DataGridTextColumn Header="Audio" Binding="{Binding AudioStatus}" Width="110"/><DataGridTextColumn Header="Notes" Binding="{Binding Remark}" Width="1.5*"/>
+                            <DataGridTemplateColumn Header="" Width="140"><DataGridTemplateColumn.CellTemplate><DataTemplate><Button Content="Return to pending" Margin="4,0" Height="26" Click="ReturnToPendingButton_Click"/></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                 </TabItem>

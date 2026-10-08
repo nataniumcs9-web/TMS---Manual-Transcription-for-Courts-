@@ -128,7 +128,11 @@ public sealed class LocalAudioAssignmentService
 
         record.Status = status;
         record.Remark = remark;
-        record.FinishedDate = status == "Finished" ? DateTime.Today : null;
+        if (status == "Finished")
+        {
+            record.FinishedDate ??= DateTime.Today;
+        }
+
         await SaveMetadataAsync(record);
     }
 

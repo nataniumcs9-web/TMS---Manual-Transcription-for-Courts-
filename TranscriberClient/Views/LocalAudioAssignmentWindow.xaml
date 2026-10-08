@@ -34,9 +34,9 @@
                 <TextBlock Grid.Row="4" Text="Defendant *" VerticalAlignment="Center" Margin="0,7"/>
                 <TextBox Grid.Row="4" Grid.Column="1" x:Name="DefendantTextBox" Height="34" VerticalContentAlignment="Center" Margin="0,4"/>
                 <TextBlock Grid.Row="5" Text="Recorded date *" VerticalAlignment="Center" Margin="0,7"/>
-                <DatePicker Grid.Row="5" Grid.Column="1" x:Name="RecordedDatePicker" Height="34" Margin="0,4"/>
+                <TextBox Grid.Row="5" Grid.Column="1" x:Name="RecordedDateTextBox" Height="34" VerticalContentAlignment="Center" Margin="0,4" ToolTip="Enter yyyy-MM-dd in Gregorian mode or d MonthName yyyy in Ethiopian mode."/>
                 <TextBlock Grid.Row="6" Text="Appointment date" VerticalAlignment="Center" Margin="0,7"/>
-                <DatePicker Grid.Row="6" Grid.Column="1" x:Name="AppointmentDatePicker" Height="34" Margin="0,4"/>
+                <TextBox Grid.Row="6" Grid.Column="1" x:Name="AppointmentDateTextBox" Height="34" VerticalContentAlignment="Center" Margin="0,4" ToolTip="Enter yyyy-MM-dd in Gregorian mode or d MonthName yyyy in Ethiopian mode."/>
                 <TextBlock Grid.Row="7" Text="Witness type" VerticalAlignment="Center" Margin="0,7"/>
                 <TextBox Grid.Row="7" Grid.Column="1" x:Name="WitnessTypeTextBox" Height="34" VerticalContentAlignment="Center" Margin="0,4"/>
                 <TextBlock Grid.Row="8" Text="Witnesses" VerticalAlignment="Center" Margin="0,7"/>

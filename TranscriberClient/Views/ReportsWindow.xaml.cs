@@ -28,8 +28,8 @@ public partial class ReportsWindow : Window
         _allRecords = records;
         DataContext = this;
         ReportGrid.ItemsSource = _filteredRecords;
-        StartDatePicker.SelectedDate = new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
-        EndDatePicker.SelectedDate = DateTime.Today;
+        StartDateTextBox.Text = CalendarDateFormatter.FormatDate(new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1));
+        EndDateTextBox.Text = CalendarDateFormatter.FormatDate(DateTime.Today);
         StatusComboBox.SelectedIndex = 0;
         ApplyFilters();
     }
@@ -49,8 +49,22 @@ public partial class ReportsWindow : Window
 
     private void ApplyFilters()
     {
-        var start = StartDatePicker.SelectedDate?.Date ?? new DateTime(DateTime.Today.Year, DateTime.Today.Month, 1);
-        var end = EndDatePicker.SelectedDate?.Date ?? DateTime.Today;
+        if (!CalendarDateFormatter.TryParseDate(StartDateTextBox.Text, out var start))
+        {
+            SummaryText.Text = "Enter a valid start date using the selected calendar format.";
+            StartDateTextBox.Focus();
+            return;
+        }
+
+        if (!CalendarDateFormatter.TryParseDate(EndDateTextBox.Text, out var end))
+        {
+            SummaryText.Text = "Enter a valid end date using the selected calendar format.";
+            EndDateTextBox.Focus();
+            return;
+        }
+
+        start = start.Date;
+        end = end.Date;
         if (end < start)
         {
             SummaryText.Text = "The end date must be on or after the start date.";

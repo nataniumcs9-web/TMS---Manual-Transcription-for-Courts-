@@ -47,8 +47,8 @@ public partial class TranscriptionWindow : Window
 
         FileNumberRun.Text = record.FileNum.ToString();
         MachineNumberRun.Text = record.MachineNum.ToString();
-        RecordedDateRun.Text = record.RecDate?.ToString("d") ?? "—";
-        AppointedDateRun.Text = record.AppointedOn?.ToString("d") ?? "—";
+        RecordedDateRun.Text = CalendarDateFormatter.FormatDate(record.RecDate) is { Length: > 0 } recordedDate ? recordedDate : "—";
+        AppointedDateRun.Text = CalendarDateFormatter.FormatDate(record.AppointedOn) is { Length: > 0 } appointmentDate ? appointmentDate : "—";
         ApplicantText.Text = record.Applicant;
         DefendantText.Text = record.Defendant;
         WitnessTypeText.Text = record.WitnessType;
