@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Threading;
@@ -12,6 +13,7 @@ public partial class TranscriptionWindow : Window
 {
     private readonly Record _record;
     private readonly DatabaseService _databaseService = new();
+    private readonly LocalAudioAssignmentService _localAudioAssignmentService = new();
     private readonly AudioPlayerService _audioPlayerService = new();
     private readonly WordDocumentService _wordDocumentService = new();
     private readonly PedalService _pedalService = new();
@@ -85,10 +87,19 @@ public partial class TranscriptionWindow : Window
 
         try
         {
-            var audioUrl = AppSettings.AudioBaseUrl + _record.Audio;
-            await _audioPlayerService.LoadFromUrlAsync(audioUrl);
+            if (string.Equals(_record.AudioStatus, "Local audio", StringComparison.OrdinalIgnoreCase))
+            {
+                await _audioPlayerService.LoadFromLocalAudioAsync(_record.Audio);
+            }
+            else
+            {
+                var audioUrl = AppSettings.AudioBaseUrl + _record.Audio;
+                await _audioPlayerService.LoadFromUrlAsync(audioUrl);
+            }
 
-            var savedPosition = await _databaseService.LoadAudioProgressAsync(_record.MachineNum.ToString());
+            var savedPosition = _record.IsLocalOnly
+                ? _record.AudioPositionSeconds
+                : await _databaseService.LoadAudioProgressAsync(_record.MachineNum.ToString());
             _audioPlayerService.Seek(savedPosition);
             _audioLoaded = true;
 
@@ -153,9 +164,16 @@ public partial class TranscriptionWindow : Window
         _isSavingAudioPosition = true;
         try
         {
-            await _databaseService.SaveAudioProgressAsync(
-                _record.MachineNum.ToString(),
-                _audioPlayerService.CurrentPositionSeconds);
+            if (_record.IsLocalOnly)
+            {
+                await _localAudioAssignmentService.SaveAudioPositionAsync(_record, _audioPlayerService.CurrentPositionSeconds);
+            }
+            else
+            {
+                await _databaseService.SaveAudioProgressAsync(
+                    _record.MachineNum.ToString(),
+                    _audioPlayerService.CurrentPositionSeconds);
+            }
             return true;
         }
         catch (Exception ex)
@@ -315,8 +333,16 @@ public partial class TranscriptionWindow : Window
                 return;
             }
 
-            await _databaseService.UpdateRecordStatusAsync(_record.Id, "Finished", _record.Remark);
-            _record.Status = "Finished";
+            if (_record.IsLocalOnly)
+            {
+                await _localAudioAssignmentService.SaveStatusAsync(_record, "Finished", _record.Remark);
+            }
+            else
+            {
+                await _databaseService.UpdateRecordStatusAsync(_record.Id, "Finished", _record.Remark);
+                _record.Status = "Finished";
+            }
+
             await CloseAfterSavingAsync();
         }
         catch (Exception ex)
@@ -331,7 +357,14 @@ public partial class TranscriptionWindow : Window
         try
         {
             _record.Remark = RemarkText.Text;
-            await _databaseService.SaveAudioProgressAsync(_record.MachineNum.ToString(), _audioPlayerService.CurrentPositionSeconds);
+            if (_record.IsLocalOnly)
+            {
+                await _localAudioAssignmentService.SaveAudioPositionAsync(_record, _audioPlayerService.CurrentPositionSeconds);
+            }
+            else
+            {
+                await _databaseService.SaveAudioProgressAsync(_record.MachineNum.ToString(), _audioPlayerService.CurrentPositionSeconds);
+            }
             if (_wordDocument != null)
             {
                 ((dynamic)_wordDocument).Save();
@@ -460,7 +493,14 @@ public partial class TranscriptionWindow : Window
             _record.Status = selectedStatus;
             try
             {
-                await _databaseService.UpdateRecordStatusAsync(_record.Id, selectedStatus, _record.Remark);
+                if (_record.IsLocalOnly)
+                {
+                    await _localAudioAssignmentService.SaveStatusAsync(_record, selectedStatus, _record.Remark);
+                }
+                else
+                {
+                    await _databaseService.UpdateRecordStatusAsync(_record.Id, selectedStatus, _record.Remark);
+                }
             }
             catch (Exception ex)
             {

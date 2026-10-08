@@ -21,6 +21,10 @@ public static class AppSettings
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "TranscriberClient",
         "ui-preferences.json");
+    private static readonly string LocalAudioFolderPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "TranscriberClient",
+        "Audio");
 
     public static void Initialize()
     {
@@ -37,6 +41,8 @@ public static class AppSettings
     public static string DatabaseConnectionString => BuildConnectionString(Database);
 
     public static string AudioBaseUrl => _configuration?["Audio:BaseUrl"] ?? "http://192.168.0.14/TMS/Recorder/";
+
+    public static string LocalAudioFolder => LocalAudioFolderPath;
 
     public static string DocsFolder => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
@@ -183,6 +189,8 @@ public sealed record UiPreferences
 {
     public bool DashboardAlwaysOnTop { get; init; }
     public bool MiniWindowAlwaysOnTop { get; init; } = true;
+    public int AutoRefreshSeconds { get; init; } = 30;
+    public bool CompactDashboard { get; init; } = true;
 }
 
 public sealed record DatabaseSettings(string Server, uint Port, string Database, string Username, string Password);

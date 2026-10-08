@@ -1,5 +1,6 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Threading;
 using TranscriberClient.Models;
 using TranscriberClient.Services;
 using TranscriberClient.ViewModels;
@@ -10,7 +11,11 @@ public partial class DashboardWindow : Window
 {
     private readonly DashboardViewModel _viewModel;
     private readonly DatabaseService _databaseService = new();
-    private bool _isInitializingPreferences = true;
+    private readonly LocalAudioAssignmentService _localAudioService = new();
+    private readonly DispatcherTimer _refreshTimer = new();
+    private readonly DispatcherTimer _searchTimer = new();
+    private bool _isLoading;
+    private bool _hasShownInitialLoadError;
 
     public DashboardWindow(UserAccount currentUser)
     {
@@ -18,76 +23,144 @@ public partial class DashboardWindow : Window
         _viewModel = new DashboardViewModel(currentUser);
         DataContext = _viewModel;
         Title = $"Transcriber Dashboard — Welcome, {currentUser.FullName}";
-        AlwaysOnTopCheckBox.IsChecked = AppSettings.UiPreferences.DashboardAlwaysOnTop;
-        Topmost = AlwaysOnTopCheckBox.IsChecked == true;
-        _isInitializingPreferences = false;
+        Topmost = AppSettings.UiPreferences.DashboardAlwaysOnTop;
+        SetCompactLayout(AppSettings.UiPreferences.CompactDashboard);
+
+        _refreshTimer.Interval = TimeSpan.FromSeconds(Math.Clamp(AppSettings.UiPreferences.AutoRefreshSeconds, 15, 300));
+        _refreshTimer.Tick += RefreshTimer_Tick;
+        _searchTimer.Interval = TimeSpan.FromMilliseconds(250);
+        _searchTimer.Tick += SearchTimer_Tick;
         Loaded += DashboardWindow_Loaded;
+        Closed += DashboardWindow_Closed;
     }
 
     private async void DashboardWindow_Loaded(object sender, RoutedEventArgs e)
     {
-        await LoadRecordsAsync();
+        await LoadRecordsAsync(isInitialLoad: true);
+        _refreshTimer.Start();
     }
 
-    private async void RefreshButton_Click(object sender, RoutedEventArgs e)
+    private async void RefreshTimer_Tick(object? sender, EventArgs e)
     {
-        await LoadRecordsAsync();
+        await LoadRecordsAsync(isInitialLoad: false);
     }
 
-    private async Task LoadRecordsAsync()
+    private void DashboardWindow_Closed(object? sender, EventArgs e)
     {
+        _refreshTimer.Stop();
+        _searchTimer.Stop();
+    }
+
+    private async Task LoadRecordsAsync(bool isInitialLoad)
+    {
+        if (_isLoading)
+        {
+            return;
+        }
+
+        _isLoading = true;
         try
         {
             await _viewModel.LoadAsync();
         }
         catch (Exception ex)
         {
-            Serilog.Log.Error(ex, "Could not load dashboard records for {Username}", _viewModel.CurrentUser.Username);
-            MessageBox.Show(
-                "Could not load your assigned records. Check the database connection and try Refresh. Details were written to the application log.",
-                "Dashboard Load Error",
-                MessageBoxButton.OK,
-                MessageBoxImage.Warning);
+            _viewModel.LastUpdatedText = "Offline · retrying automatically";
+            Serilog.Log.Error(ex, "Could not refresh dashboard records for {Username}", _viewModel.CurrentUser.Username);
+            if (isInitialLoad && !_hasShownInitialLoadError)
+            {
+                _hasShownInitialLoadError = true;
+                MessageBox.Show(
+                    "Could not load your assignments. The dashboard will retry automatically. Check your database connection and account permissions.",
+                    "Dashboard Connection",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+            }
+        }
+        finally
+        {
+            _isLoading = false;
         }
     }
 
-    private void AlwaysOnTopChecked(object sender, RoutedEventArgs e)
+    private void SearchTextBox_TextChanged(object sender, TextChangedEventArgs e)
     {
-        Topmost = AlwaysOnTopCheckBox.IsChecked == true;
-        if (_isInitializingPreferences)
-        {
-            return;
-        }
+        _searchTimer.Stop();
+        _searchTimer.Start();
+    }
 
-        try
+    private void SearchTimer_Tick(object? sender, EventArgs e)
+    {
+        _searchTimer.Stop();
+        _viewModel.SearchText = SearchTextBox.Text;
+    }
+
+    private async void AddLocalAudioButton_Click(object sender, RoutedEventArgs e)
+    {
+        var dialog = new LocalAudioAssignmentWindow(_viewModel.CurrentUser)
         {
-            AppSettings.SaveUiPreferences(AppSettings.UiPreferences with
-            {
-                DashboardAlwaysOnTop = Topmost
-            });
-        }
-        catch (Exception ex)
+            Owner = this
+        };
+        if (dialog.ShowDialog() == true)
         {
-            Serilog.Log.Error(ex, "Could not save dashboard always-on-top preference");
+            await LoadRecordsAsync(isInitialLoad: false);
+            _viewModel.LastUpdatedText = "Local assignment saved on this computer";
         }
+    }
+
+    private async void UserSettingsButton_Click(object sender, RoutedEventArgs e)
+    {
+        var settingsWindow = new UserSettingsWindow(_viewModel.CurrentUser)
+        {
+            Owner = this
+        };
+
+        if (settingsWindow.ShowDialog() == true)
+        {
+            var preferences = AppSettings.UiPreferences;
+            Topmost = preferences.DashboardAlwaysOnTop;
+            _refreshTimer.Interval = TimeSpan.FromSeconds(Math.Clamp(preferences.AutoRefreshSeconds, 15, 300));
+            SetCompactLayout(preferences.CompactDashboard);
+            await LoadRecordsAsync(isInitialLoad: false);
+        }
+    }
+
+    private void SetCompactLayout(bool isCompact)
+    {
+        var rowHeight = isCompact ? 30d : 40d;
+        AssignedGrid.RowHeight = rowHeight;
+        PendingGrid.RowHeight = rowHeight;
+        SuspendedGrid.RowHeight = rowHeight;
+        FinishedGrid.RowHeight = rowHeight;
+    }
+
+    private void ReportsButton_Click(object sender, RoutedEventArgs e)
+    {
+        var reportsWindow = new ReportsWindow(_viewModel.CurrentUser, _viewModel.GetAllRecords())
+        {
+            Owner = this
+        };
+        reportsWindow.ShowDialog();
     }
 
     private async void StartWorkButton_Click(object sender, RoutedEventArgs e)
     {
-        if (sender is not Button button)
-        {
-            return;
-        }
-
-        var record = button.DataContext as Record;
-        if (record == null)
+        if (sender is not Button { DataContext: Record record })
         {
             return;
         }
 
         try
         {
-            await _databaseService.UpdateRecordStatusAsync(record.Id, "Pending", record.Remark);
+            if (record.IsLocalOnly)
+            {
+                await _localAudioService.SaveStatusAsync(record, "Pending", record.Remark);
+            }
+            else
+            {
+                await _databaseService.UpdateRecordStatusAsync(record.Id, "Pending", record.Remark);
+            }
+
             record.Status = "Pending";
         }
         catch (Exception ex)
@@ -101,16 +174,14 @@ public partial class DashboardWindow : Window
             return;
         }
 
-        await LoadRecordsAsync();
-        var transcriptionWindow = new TranscriptionWindow(record, _viewModel.CurrentUser);
-        transcriptionWindow.Show();
+        await LoadRecordsAsync(isInitialLoad: false);
+        new TranscriptionWindow(record, _viewModel.CurrentUser).Show();
     }
 
     private void LogoutButton_Click(object sender, RoutedEventArgs e)
     {
         Session.CurrentUser = null;
-        var loginWindow = new LoginWindow();
-        loginWindow.Show();
+        new LoginWindow().Show();
         Close();
     }
 }

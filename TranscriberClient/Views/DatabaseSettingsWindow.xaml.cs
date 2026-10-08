@@ -33,17 +33,19 @@ public partial class DatabaseSettingsWindow : Window
         {
             await using var connection = new MySqlConnection(AppSettings.BuildConnectionString(settings));
             await connection.OpenAsync();
-            await using var command = new MySqlCommand("SELECT 1", connection);
-            await command.ExecuteScalarAsync();
+            await using var command = new MySqlCommand(
+                "SELECT id, username, full_name, role, password, status FROM req_acc LIMIT 0",
+                connection);
+            await using var reader = await command.ExecuteReaderAsync();
 
-            ResultText.Text = "Connection successful.";
+            ResultText.Text = "Database connection and transcriber account table are available. This test does not validate a transcriber sign-in; use the separate account in req_acc.";
             ResultText.Foreground = System.Windows.Media.Brushes.DarkGreen;
         }
         catch (Exception ex)
         {
             Serilog.Log.Error(ex, "Database connection test failed for server {Server}, database {Database}, user {Username}",
                 settings.Server, settings.Database, settings.Username);
-            ResultText.Text = $"Connection failed: {ex.Message}";
+            ResultText.Text = $"Connection or transcriber-table check failed: {ex.Message}";
             ResultText.Foreground = System.Windows.Media.Brushes.DarkRed;
         }
     }

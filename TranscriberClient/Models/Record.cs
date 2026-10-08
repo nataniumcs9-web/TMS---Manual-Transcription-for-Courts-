@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace TranscriberClient.Models;
 
 public class Record
@@ -23,4 +25,7 @@ public class Record
     public DateTime? DistributedOn { get; set; }
     public DateTime? FinishedDate { get; set; }
     public string Doc { get; set; } = string.Empty;
+    public double AudioPositionSeconds { get; set; }
+    [JsonIgnore]
+    public bool IsLocalOnly { get; set; }
 }

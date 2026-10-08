@@ -38,6 +38,29 @@ public class AudioPlayerService : IDisposable
         InitializeReader(localPath);
     }
 
+    public Task LoadFromLocalAudioAsync(string fileName)
+    {
+        var safeFileName = Path.GetFileName(fileName);
+        if (string.IsNullOrWhiteSpace(safeFileName) || !string.Equals(safeFileName, fileName, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("The assigned local audio filename is invalid.");
+        }
+
+        return LoadFromFileAsync(Path.Combine(AppSettings.LocalAudioFolder, safeFileName));
+    }
+
+    public Task LoadFromFileAsync(string filePath)
+    {
+        if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
+        {
+            throw new FileNotFoundException("The shared audio file could not be found.", filePath);
+        }
+
+        _sourcePath = filePath;
+        InitializeReader(filePath);
+        return Task.CompletedTask;
+    }
+
     public void Play()
     {
         if (_waveOut == null || _reader == null)

@@ -51,18 +51,20 @@ public class DatabaseService
         };
     }
 
-    public async Task<List<Record>> GetRecordsForUserAsync(string username, string status)
+    public async Task<List<Record>> GetRecordsForUserAsync(string username)
     {
         var results = new List<Record>();
 
         await using var connection = CreateConnection();
         await connection.OpenAsync();
 
-        const string sql = @"SELECT * FROM records WHERE transcriber = @Username AND status = @Status ORDER BY id DESC";
+        const string sql = @"SELECT * FROM records
+                             WHERE transcriber = @Username
+                               AND status IN ('Assigned', 'Pending', 'Suspended', 'Finished')
+                             ORDER BY id DESC";
 
         await using var command = new MySqlCommand(sql, connection);
         command.Parameters.AddWithValue("@Username", username);
-        command.Parameters.AddWithValue("@Status", status);
 
         await using var reader = await command.ExecuteReaderAsync();
         while (await reader.ReadAsync())
@@ -71,6 +73,60 @@ public class DatabaseService
         }
 
         return results;
+    }
+
+    public async Task AttachLocalAudioAsync(int recordId, string username, string audioFileName)
+    {
+        await using var connection = CreateConnection();
+        await connection.OpenAsync();
+
+        const string sql = @"UPDATE records
+                             SET audio = @Audio, audio_status = 'Local audio'
+                             WHERE id = @Id AND transcriber = @Username
+                               AND status IN ('Assigned', 'Pending', 'Suspended')";
+        await using var command = new MySqlCommand(sql, connection);
+        command.Parameters.AddWithValue("@Audio", audioFileName);
+        command.Parameters.AddWithValue("@Id", recordId);
+        command.Parameters.AddWithValue("@Username", username);
+        if (await command.ExecuteNonQueryAsync() != 1)
+        {
+            throw new InvalidOperationException("The audio was not attached. The assignment may have changed or may no longer belong to your account.");
+        }
+    }
+
+    public async Task ChangeTranscriberPasswordAsync(UserAccount user, string currentPassword, string newPassword)
+    {
+        await using var connection = CreateConnection();
+        await connection.OpenAsync();
+
+        const string readSql = @"SELECT password FROM req_acc
+                                 WHERE id = @Id AND username = @Username
+                                   AND status = 'Active' AND role = 'Transcriber'
+                                 LIMIT 1";
+        await using var readCommand = new MySqlCommand(readSql, connection);
+        readCommand.Parameters.AddWithValue("@Id", user.Id);
+        readCommand.Parameters.AddWithValue("@Username", user.Username);
+        var storedHash = Convert.ToString(await readCommand.ExecuteScalarAsync());
+
+        if (!Helpers.PasswordHasher.Verify(currentPassword, storedHash))
+        {
+            throw new InvalidOperationException("The current password is incorrect.");
+        }
+
+        var newHash = Helpers.PasswordHasher.Hash(newPassword);
+        const string updateSql = @"UPDATE req_acc SET password = @Password
+                                   WHERE id = @Id AND username = @Username
+                                     AND status = 'Active' AND role = 'Transcriber'";
+        await using var updateCommand = new MySqlCommand(updateSql, connection);
+        updateCommand.Parameters.AddWithValue("@Password", newHash);
+        updateCommand.Parameters.AddWithValue("@Id", user.Id);
+        updateCommand.Parameters.AddWithValue("@Username", user.Username);
+        if (await updateCommand.ExecuteNonQueryAsync() != 1)
+        {
+            throw new InvalidOperationException("The password was not changed because the account is no longer active.");
+        }
+
+        user.PasswordHash = newHash;
     }
 
     public async Task SaveAudioProgressAsync(string machineNum, double position)

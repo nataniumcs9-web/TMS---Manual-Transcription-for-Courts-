@@ -35,20 +35,42 @@ public partial class LoginViewModel : ObservableObject
 
         try
         {
+            if (!await _authService.IsDatabaseEndpointReachableAsync())
+            {
+                if (_authService.TryOfflineLogin(Username, Password, out var offlineUser))
+                {
+                    Session.CurrentUser = offlineUser;
+                    ErrorMessage = "Signed in offline. Server data is unavailable; only this Windows user's local audio files are available until the connection returns.";
+                    return;
+                }
+
+                ErrorMessage = "No database connection is available. Connect to the court network and sign in online once to enable offline sign-in on this Windows account.";
+                return;
+            }
+
             var user = await _authService.LoginAsync(Username, Password);
             if (user == null)
             {
-                ErrorMessage = "Invalid username, password, or account status.";
+                ErrorMessage = "Sign-in failed. Use your transcriber account, not the database connection username and password. The account must be Active, have the Transcriber role, and use a BCrypt password hash. Ask your database administrator to verify the account.";
                 IsBusy = false;
                 return;
             }
 
+            _authService.CacheForOfflineLogin(user);
             Session.CurrentUser = user;
         }
         catch (Exception ex)
         {
-            ErrorMessage = "Unable to sign in. Please check the database connection.";
             Serilog.Log.Error(ex, "Login failed");
+            if (_authService.TryOfflineLogin(Username, Password, out var offlineUser))
+            {
+                Session.CurrentUser = offlineUser;
+                ErrorMessage = "Signed in using this Windows account's offline cache. Server data is unavailable; local audio remains available.";
+            }
+            else
+            {
+                ErrorMessage = "Sign-in could not be completed. Check the database connection and account status. Offline sign-in is unavailable or expired.";
+            }
         }
         finally
         {

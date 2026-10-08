@@ -12,4 +12,5 @@ public class UserAccount
     public string PasswordHash { get; set; } = string.Empty;
     public DateTime? ReqDate { get; set; }
     public string Status { get; set; } = string.Empty;
+    public bool IsOfflineSignIn { get; set; }
 }
