@@ -1,5 +1,5 @@
 #define AppName "GZHC Court Transcriber"
-#define AppVersion "1.0.2"
+#define AppVersion "1.0.3"
 #define AppPublisher "Gedeo Zone High Court"
 #define AppExeName "TranscriberClient.exe"
 #define PublishDir "..\TranscriberClient\publish\installer-payload"
@@ -25,7 +25,7 @@ OutputBaseFilename=GZHC-Transcriber-Setup-{#AppVersion}
 SetupIconFile=..\TranscriberClient\Assets\gzhc.ico
 UninstallDisplayIcon={app}\{#AppExeName}
 UninstallDisplayName={#AppName}
-VersionInfoVersion=1.0.2.0
+VersionInfoVersion=1.0.3.0
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 WizardStyle=modern

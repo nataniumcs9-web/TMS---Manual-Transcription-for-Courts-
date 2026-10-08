@@ -121,10 +121,37 @@ public class WordDocumentService
                 $"'{Path.GetFileName(filePath)}' is marked read-only in Windows. Remove its Read-only file attribute before editing.");
         }
 
+        return OpenDocumentFile(filePath, requireEditable: true);
+    }
+
+    public object? OpenExistingDocument(string fileNum, string machineNum)
+    {
+        var filePath = GetDocumentPath(fileNum, machineNum);
+        if (!File.Exists(filePath))
+        {
+            MigrateLegacyDocument(fileNum, machineNum, filePath);
+        }
+
+        if (!File.Exists(filePath))
+        {
+            throw new FileNotFoundException(
+                $"The transcription document for File {fileNum}, Machine {machineNum} was not found.",
+                filePath);
+        }
+
+        return OpenDocumentFile(filePath, requireEditable: false);
+    }
+
+    private static object? OpenDocumentFile(string filePath, bool requireEditable)
+    {
         var existingDocument = TryGetOpenDocument(filePath);
         if (existingDocument != null)
         {
-            EnsureEditable(existingDocument, filePath);
+            if (requireEditable)
+            {
+                EnsureEditable(existingDocument, filePath);
+            }
+
             ActivateDocument(existingDocument.Application, existingDocument);
             return existingDocument;
         }
@@ -140,7 +167,11 @@ public class WordDocumentService
             var document = TryGetOpenDocument(filePath);
             if (document != null)
             {
-                EnsureEditable(document, filePath);
+                if (requireEditable)
+                {
+                    EnsureEditable(document, filePath);
+                }
+
                 ActivateDocument(document.Application, document);
                 return document;
             }

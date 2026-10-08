@@ -58,7 +58,7 @@ if ($LASTEXITCODE -ne 0) {
     throw "Inno Setup compilation failed with exit code $LASTEXITCODE."
 }
 
-$setupExe = Join-Path $outputDirectory "GZHC-Transcriber-Setup-1.0.2.exe"
+$setupExe = Join-Path $outputDirectory "GZHC-Transcriber-Setup-1.0.3.exe"
 if (-not (Test-Path -LiteralPath $setupExe -PathType Leaf)) {
     throw "Installer executable was not created: $setupExe"
 }

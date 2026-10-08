@@ -1,5 +1,8 @@
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Media;
+using System.Windows.Media.Media3D;
 using System.Windows.Threading;
 using TranscriberClient.Models;
 using TranscriberClient.Services;
@@ -12,6 +15,7 @@ public partial class DashboardWindow : Window
     private readonly DashboardViewModel _viewModel;
     private readonly DatabaseService _databaseService = new();
     private readonly LocalAudioAssignmentService _localAudioService = new();
+    private readonly WordDocumentService _wordDocumentService = new();
     private readonly DispatcherTimer _refreshTimer = new();
     private readonly DispatcherTimer _searchTimer = new();
     private bool _isLoading;
@@ -223,6 +227,68 @@ public partial class DashboardWindow : Window
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
         }
+    }
+
+    private void FinishedGrid_PreviewMouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+    {
+        if (FindAncestor<Button>(e.OriginalSource as DependencyObject) != null)
+        {
+            return;
+        }
+
+        var row = FindAncestor<DataGridRow>(e.OriginalSource as DependencyObject);
+        if (row?.Item is Record record)
+        {
+            OpenFinishedDocument(record);
+        }
+    }
+
+    private void OpenFinishedDocumentButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { DataContext: Record record })
+        {
+            OpenFinishedDocument(record);
+        }
+    }
+
+    private void OpenFinishedDocument(Record record)
+    {
+        try
+        {
+            _wordDocumentService.OpenExistingDocument(
+                record.FileNum.ToString(),
+                record.MachineNum.ToString());
+        }
+        catch (Exception ex)
+        {
+            Serilog.Log.Error(ex, "Could not open finished transcription document for record {RecordId}", record.Id);
+            MessageBox.Show(
+                $"The finished transcript could not be opened.\n\n{ex.Message}",
+                "Open Transcript Failed",
+                MessageBoxButton.OK,
+                MessageBoxImage.Warning);
+        }
+    }
+
+    private static T? FindAncestor<T>(DependencyObject? element) where T : DependencyObject
+    {
+        while (element != null)
+        {
+            if (element is T ancestor)
+            {
+                return ancestor;
+            }
+
+            element = element switch
+            {
+                Visual or Visual3D => VisualTreeHelper.GetParent(element),
+                ContentElement contentElement => ContentOperations.GetParent(contentElement)
+                    ?? (contentElement as FrameworkContentElement)?.Parent,
+                _ => null
+            };
+        }
+
+        return null;
     }
 
     private void LogoutButton_Click(object sender, RoutedEventArgs e)

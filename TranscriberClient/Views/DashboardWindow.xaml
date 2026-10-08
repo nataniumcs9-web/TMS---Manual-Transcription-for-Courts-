@@ -10,6 +10,7 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
         <Border Grid.Row="0" Background="{StaticResource BrandBrush}" CornerRadius="9" Padding="16,10" Margin="0,0,0,10">
@@ -122,7 +123,8 @@
                     </DataGrid>
                 </TabItem>
                 <TabItem Header="Finished">
-                    <DataGrid x:Name="FinishedGrid" AutoGenerateColumns="False" ItemsSource="{Binding FinishedView}" IsReadOnly="True" CanUserAddRows="False" CanUserSortColumns="True" RowHeight="30">
+                    <DataGrid x:Name="FinishedGrid" AutoGenerateColumns="False" ItemsSource="{Binding FinishedView}" IsReadOnly="True" CanUserAddRows="False" CanUserSortColumns="True" RowHeight="30"
+                              PreviewMouseLeftButtonDown="FinishedGrid_PreviewMouseLeftButtonDown">
                         <DataGrid.Columns>
                             <DataGridTextColumn Header="R.N" Binding="{Binding Id}" Width="55"/><DataGridTextColumn Header="File #" Binding="{Binding FileNum}" Width="75"/><DataGridTextColumn Header="Machine #" Binding="{Binding MachineNum}" Width="85"/>
                             <DataGridTextColumn Header="Applicant" Binding="{Binding Applicant}" Width="1.2*"/><DataGridTextColumn Header="Defendant" Binding="{Binding Defendant}" Width="1.2*"/>
@@ -130,10 +132,14 @@
                             <DataGridTextColumn Header="Appointment" Binding="{Binding AppointedOn, Converter={StaticResource CalendarDateConverter}}" Width="125"/><DataGridTextColumn Header="Finished" Binding="{Binding FinishedDate, Converter={StaticResource CalendarDateConverter}}" Width="115"/>
                             <DataGridTextColumn Header="Audio" Binding="{Binding AudioStatus}" Width="110"/><DataGridTextColumn Header="Notes" Binding="{Binding Remark}" Width="1.5*"/>
                             <DataGridTemplateColumn Header="" Width="140"><DataGridTemplateColumn.CellTemplate><DataTemplate><Button Content="Return to pending" Margin="4,0" Height="26" Click="ReturnToPendingButton_Click"/></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Document" Width="90"><DataGridTemplateColumn.CellTemplate><DataTemplate><Button Content="Open" Margin="4,0" Height="26" Click="OpenFinishedDocumentButton_Click"/></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                 </TabItem>
             </TabControl>
         </Border>
+
+        <TextBlock Grid.Row="5" Text="Developed by Natnael Abebe" FontSize="9" Foreground="{StaticResource MutedBrush}"
+                   HorizontalAlignment="Right" Margin="0,6,2,0"/>
     </Grid>
 </Window>
