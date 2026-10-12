@@ -19,7 +19,7 @@
                 <Grid Margin="18">
                     <Grid.ColumnDefinitions><ColumnDefinition Width="205"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/>
+                        <RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/>
                     </Grid.RowDefinitions>
                     <TextBlock Grid.Row="0" Grid.ColumnSpan="2" Text="Dashboard and display preferences" FontWeight="Bold" FontSize="15" Margin="0,0,0,14"/>
                     <TextBlock Grid.Row="1" Text="Automatic refresh" VerticalAlignment="Center" Margin="0,8"/>
@@ -37,7 +37,20 @@
                     </StackPanel>
                     <TextBlock Grid.Row="3" Text="Calendar display" VerticalAlignment="Center" Margin="0,8"/>
                     <CheckBox Grid.Row="3" Grid.Column="1" x:Name="EthiopianCalendarCheckBox" Content="Show dates in the Ethiopian calendar (E.C.)" VerticalAlignment="Center" Margin="0,5"/>
-                    <Border Grid.Row="4" Grid.ColumnSpan="2" Background="#F3F6FA" CornerRadius="6" Padding="12" VerticalAlignment="Top" Margin="0,12,0,0">
+                    <TextBlock Grid.Row="4" Text="Audio rewind / forward" VerticalAlignment="Center" Margin="0,8"/>
+                    <ComboBox Grid.Row="4" Grid.Column="1" x:Name="AudioSkipComboBox" Height="34" VerticalContentAlignment="Center" Margin="0,4">
+                        <ComboBoxItem Content="1 second" Tag="1"/>
+                        <ComboBoxItem Content="2 seconds" Tag="2"/>
+                        <ComboBoxItem Content="3 seconds" Tag="3"/>
+                        <ComboBoxItem Content="4 seconds" Tag="4"/>
+                        <ComboBoxItem Content="5 seconds" Tag="5"/>
+                        <ComboBoxItem Content="6 seconds" Tag="6"/>
+                        <ComboBoxItem Content="7 seconds" Tag="7"/>
+                        <ComboBoxItem Content="8 seconds" Tag="8"/>
+                        <ComboBoxItem Content="9 seconds" Tag="9"/>
+                        <ComboBoxItem Content="10 seconds" Tag="10"/>
+                    </ComboBox>
+                    <Border Grid.Row="5" Grid.ColumnSpan="2" Background="#F3F6FA" CornerRadius="6" Padding="12" VerticalAlignment="Top" Margin="0,12,0,0">
                         <TextBlock Text="Date display changes only how dates appear and are entered. Dates stored in the court database remain Gregorian."
                                    TextWrapping="Wrap" Foreground="{StaticResource MutedBrush}"/>
                     </Border>

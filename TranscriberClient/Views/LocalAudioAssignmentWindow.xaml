@@ -27,8 +27,9 @@
                 </Grid>
                 <TextBlock Grid.Row="1" Text="Court file number *" VerticalAlignment="Center" Margin="0,7"/>
                 <TextBox Grid.Row="1" Grid.Column="1" x:Name="FileNumberTextBox" Height="34" VerticalContentAlignment="Center" Margin="0,4"/>
-                <TextBlock Grid.Row="2" Text="Machine number" VerticalAlignment="Center" Margin="0,7"/>
-                <TextBox Grid.Row="2" Grid.Column="1" x:Name="MachineNumberTextBox" Height="34" VerticalContentAlignment="Center" Margin="0,4"/>
+                <TextBlock Grid.Row="2" Text="Machine number *" VerticalAlignment="Center" Margin="0,7"/>
+                <TextBox Grid.Row="2" Grid.Column="1" x:Name="MachineNumberTextBox" Height="34" VerticalContentAlignment="Center" Margin="0,4"
+                         MaxLength="6" ToolTip="Use a unique five- or six-digit machine number. Five-digit numbers are padded with a leading zero when matching audio."/>
                 <TextBlock Grid.Row="3" Text="Applicant *" VerticalAlignment="Center" Margin="0,7"/>
                 <TextBox Grid.Row="3" Grid.Column="1" x:Name="ApplicantTextBox" Height="34" VerticalContentAlignment="Center" Margin="0,4"/>
                 <TextBlock Grid.Row="4" Text="Defendant *" VerticalAlignment="Center" Margin="0,7"/>

@@ -9,6 +9,17 @@ public partial class LoginViewModel : ObservableObject
 {
     private readonly AuthService _authService = new();
 
+    public LoginViewModel()
+    {
+        var savedLogin = AppSettings.LoadSavedLogin();
+        if (savedLogin != null)
+        {
+            Username = savedLogin.Username;
+            Password = savedLogin.Password;
+            RememberLogin = true;
+        }
+    }
+
     [ObservableProperty]
     private string _username = string.Empty;
 
@@ -20,6 +31,9 @@ public partial class LoginViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _isBusy;
+
+    [ObservableProperty]
+    private bool _rememberLogin;
 
     [RelayCommand]
     private async Task LoginAsync()
@@ -39,8 +53,13 @@ public partial class LoginViewModel : ObservableObject
             {
                 if (_authService.TryOfflineLogin(Username, Password, out var offlineUser))
                 {
+                    var loginInfoSaved = TrySaveLoginInfo();
                     Session.CurrentUser = offlineUser;
-                    ErrorMessage = "Signed in offline. Server data is unavailable; only this Windows user's local audio files are available until the connection returns.";
+                    ErrorMessage = "Signed in offline. Downloaded assignments and audio are available; changes will sync when the database returns.";
+                    if (!loginInfoSaved)
+                    {
+                        ErrorMessage += " Saved login information could not be updated.";
+                    }
                     return;
                 }
 
@@ -57,15 +76,25 @@ public partial class LoginViewModel : ObservableObject
             }
 
             _authService.CacheForOfflineLogin(user);
+            var savedLoginInfo = TrySaveLoginInfo();
             Session.CurrentUser = user;
+            if (!savedLoginInfo)
+            {
+                ErrorMessage = "Signed in. Saved login information could not be updated.";
+            }
         }
         catch (Exception ex)
         {
             Serilog.Log.Error(ex, "Login failed");
             if (_authService.TryOfflineLogin(Username, Password, out var offlineUser))
             {
+                var loginInfoSaved = TrySaveLoginInfo();
                 Session.CurrentUser = offlineUser;
-                ErrorMessage = "Signed in using this Windows account's offline cache. Server data is unavailable; local audio remains available.";
+                ErrorMessage = "Signed in using this Windows account's offline cache. Downloaded assignments are available; changes will sync when the database returns.";
+                if (!loginInfoSaved)
+                {
+                    ErrorMessage += " Saved login information could not be updated.";
+                }
             }
             else
             {
@@ -75,6 +104,20 @@ public partial class LoginViewModel : ObservableObject
         finally
         {
             IsBusy = false;
+        }
+    }
+
+    private bool TrySaveLoginInfo()
+    {
+        try
+        {
+            AppSettings.SaveLogin(Username, Password, RememberLogin);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Serilog.Log.Warning(ex, "Could not update remembered sign-in information");
+            return false;
         }
     }
 }

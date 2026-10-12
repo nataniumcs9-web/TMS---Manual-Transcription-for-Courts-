@@ -21,6 +21,8 @@
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <Border Width="35" Height="35" Background="White" CornerRadius="18" Padding="4" Margin="0,0,10,0" VerticalAlignment="Center">
                     <Image Source="/Assets/logo.png" Stretch="Uniform"/>
@@ -32,11 +34,17 @@
                 <CheckBox Grid.Column="2" x:Name="AlwaysOnTopCheckBox" Content="Always on top" Foreground="White"
                           VerticalAlignment="Center" Margin="0,0,12,0"
                           Checked="AlwaysOnTopCheckBox_Changed" Unchecked="AlwaysOnTopCheckBox_Changed"/>
-                <Border Grid.Column="3" Background="#284D70" CornerRadius="4" Padding="9,5" VerticalAlignment="Center">
+                <Border Grid.Column="3" x:Name="PedalStatusBorder" Background="#284D70" CornerRadius="4" Padding="9,5" VerticalAlignment="Center">
                     <TextBlock x:Name="PedalStatusText" Text="Pedal: Not found" Foreground="White" FontSize="11" FontWeight="SemiBold"/>
                 </Border>
                 <Button Grid.Column="4" x:Name="CompactModeButton" Content="− Minimize" Background="#FFFFFF" Foreground="{StaticResource BrandBrush}"
                         Margin="10,0,0,0" Padding="10,0" Click="CompactModeButton_Click"/>
+                <Button Grid.Column="5" x:Name="MiniSaveButton" Content="Save" Visibility="Collapsed"
+                        Background="{StaticResource AccentBrush}" Foreground="White" Margin="6,0,0,0" Padding="9,0"
+                        Click="SaveProgressButton_Click"/>
+                <Button Grid.Column="6" x:Name="MiniExitButton" Content="Exit" Visibility="Collapsed"
+                        Background="#E9EFF5" Foreground="{StaticResource BrandBrush}" Margin="6,0,0,0" Padding="9,0"
+                        Click="ExitButton_Click"/>
             </Grid>
         </Border>
 
@@ -64,9 +72,9 @@
                 <TextBlock Grid.Row="0" Grid.Column="1" x:Name="TimeText" Text="00:00 / 00:00" FontWeight="SemiBold" FontSize="13"/>
                 <Slider Grid.Row="1" Grid.ColumnSpan="2" x:Name="SeekSlider" Minimum="0" Maximum="100" ValueChanged="SeekSlider_ValueChanged" Margin="0,4,0,0"/>
                 <StackPanel Grid.Row="2" Grid.ColumnSpan="2" Orientation="Horizontal" VerticalAlignment="Center" Margin="0,7,0,0">
-                    <Button Content="−3 sec" Width="68" Click="RewindButton_Click"/>
+                    <Button x:Name="RewindButton" Content="−3 sec" Width="68" Click="RewindButton_Click"/>
                     <Button x:Name="PlayPauseButton" Content="Play / Pause" Width="100" Background="{StaticResource AccentBrush}" Click="PlayPauseButton_Click"/>
-                    <Button Content="+3 sec" Width="68" Click="ForwardButton_Click"/>
+                    <Button x:Name="ForwardButton" Content="+3 sec" Width="68" Click="ForwardButton_Click"/>
                     <TextBlock Text="Volume" Foreground="{StaticResource MutedBrush}" VerticalAlignment="Center" Margin="8,0,5,0"/>
                     <Slider x:Name="VolumeSlider" Width="90" Minimum="0" Maximum="1" Value="0.8" ValueChanged="VolumeSlider_ValueChanged" VerticalAlignment="Center"/>
                 </StackPanel>

@@ -175,29 +175,40 @@ public class DatabaseService
             : 0d;
     }
 
-    public async Task<bool> UpdateRecordStatusAsync(int id, string newStatus, string remark)
+    public async Task<bool> UpdateRecordStatusAsync(int id, string username, string newStatus, string remark)
     {
         await using var connection = CreateConnection();
         await connection.OpenAsync();
 
         if (newStatus == "Finished")
         {
-            const string sql = "UPDATE records SET status = @Status, remark = @Remark, finished_date = COALESCE(finished_date, CURDATE()) WHERE id = @Id";
+            const string sql = @"UPDATE records SET status = @Status, remark = @Remark, finished_date = COALESCE(finished_date, CURDATE())
+                                 WHERE id = @Id AND transcriber = @Username";
             await using var command = new MySqlCommand(sql, connection);
             command.Parameters.AddWithValue("@Status", newStatus);
             command.Parameters.AddWithValue("@Remark", remark ?? string.Empty);
             command.Parameters.AddWithValue("@Id", id);
+            command.Parameters.AddWithValue("@Username", username);
             await command.ExecuteNonQueryAsync();
-            return true;
+        }
+        else
+        {
+            const string updateSql = "UPDATE records SET status = @Status, remark = @Remark WHERE id = @Id AND transcriber = @Username";
+            await using var command = new MySqlCommand(updateSql, connection);
+            command.Parameters.AddWithValue("@Status", newStatus);
+            command.Parameters.AddWithValue("@Remark", remark ?? string.Empty);
+            command.Parameters.AddWithValue("@Id", id);
+            command.Parameters.AddWithValue("@Username", username);
+            await command.ExecuteNonQueryAsync();
         }
 
-        const string updateSql = "UPDATE records SET status = @Status, remark = @Remark WHERE id = @Id";
-        await using var command2 = new MySqlCommand(updateSql, connection);
-        command2.Parameters.AddWithValue("@Status", newStatus);
-        command2.Parameters.AddWithValue("@Remark", remark ?? string.Empty);
-        command2.Parameters.AddWithValue("@Id", id);
-        await command2.ExecuteNonQueryAsync();
-        return true;
+        const string verifySql = @"SELECT COUNT(*) FROM records
+                                   WHERE id = @Id AND transcriber = @Username AND status = @Status";
+        await using var verifyCommand = new MySqlCommand(verifySql, connection);
+        verifyCommand.Parameters.AddWithValue("@Id", id);
+        verifyCommand.Parameters.AddWithValue("@Username", username);
+        verifyCommand.Parameters.AddWithValue("@Status", newStatus);
+        return Convert.ToInt32(await verifyCommand.ExecuteScalarAsync()) == 1;
     }
 
     private static Record MapRecord(MySqlDataReader reader)

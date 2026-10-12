@@ -21,6 +21,10 @@ public static class AppSettings
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "TranscriberClient",
         "ui-preferences.json");
+    private static readonly string SavedLoginPath = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "TranscriberClient",
+        "saved-login.dat");
     private static readonly string LocalAudioFolderPath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "TranscriberClient",
@@ -49,6 +53,45 @@ public static class AppSettings
         "GZHC_Files");
 
     public static UiPreferences UiPreferences => _uiPreferences ??= LoadUiPreferences();
+
+    public static SavedLogin? LoadSavedLogin()
+    {
+        if (!File.Exists(SavedLoginPath))
+        {
+            return null;
+        }
+
+        try
+        {
+            var protectedBytes = File.ReadAllBytes(SavedLoginPath);
+            var plaintext = ProtectedData.Unprotect(protectedBytes, null, DataProtectionScope.CurrentUser);
+            return JsonSerializer.Deserialize<SavedLogin>(plaintext);
+        }
+        catch (Exception ex) when (ex is IOException or CryptographicException or JsonException or UnauthorizedAccessException)
+        {
+            Serilog.Log.Warning(ex, "Could not load saved sign-in information");
+            return null;
+        }
+    }
+
+    public static void SaveLogin(string username, string password, bool remember)
+    {
+        if (!remember)
+        {
+            if (File.Exists(SavedLoginPath))
+            {
+                File.Delete(SavedLoginPath);
+            }
+            return;
+        }
+
+        var directory = Path.GetDirectoryName(SavedLoginPath)
+            ?? throw new InvalidOperationException("Could not determine the saved sign-in folder.");
+        Directory.CreateDirectory(directory);
+        var plaintext = JsonSerializer.SerializeToUtf8Bytes(new SavedLogin(username.Trim(), password));
+        var protectedBytes = ProtectedData.Protect(plaintext, null, DataProtectionScope.CurrentUser);
+        File.WriteAllBytes(SavedLoginPath, protectedBytes);
+    }
 
     public static string LogFile => _configuration?["Logging:LogFile"] ?? "logs/transcriber-.log";
 
@@ -192,6 +235,9 @@ public sealed record UiPreferences
     public int AutoRefreshSeconds { get; init; } = 30;
     public bool CompactDashboard { get; init; } = true;
     public bool UseEthiopianCalendar { get; init; }
+    public int AudioSkipSeconds { get; init; } = 3;
 }
+
+public sealed record SavedLogin(string Username, string Password);
 
 public sealed record DatabaseSettings(string Server, uint Port, string Database, string Username, string Password);

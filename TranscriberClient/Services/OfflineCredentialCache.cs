@@ -9,7 +9,6 @@ namespace TranscriberClient.Services;
 
 public sealed class OfflineCredentialCache
 {
-    private static readonly TimeSpan MaximumOfflineAge = TimeSpan.FromDays(30);
     private static readonly string CachePath = Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
         "TranscriberClient",
@@ -24,8 +23,7 @@ public sealed class OfflineCredentialCache
             FullName = user.FullName,
             Gender = user.Gender,
             Role = user.Role,
-            PasswordHash = user.PasswordHash,
-            SavedAtUtc = DateTime.UtcNow
+            PasswordHash = user.PasswordHash
         };
 
         var plaintext = JsonSerializer.SerializeToUtf8Bytes(cached);
@@ -50,7 +48,6 @@ public sealed class OfflineCredentialCache
             var plaintext = ProtectedData.Unprotect(protectedData, null, DataProtectionScope.CurrentUser);
             var cached = JsonSerializer.Deserialize<CachedAccount>(Encoding.UTF8.GetString(plaintext));
             if (cached == null
-                || DateTime.UtcNow - cached.SavedAtUtc > MaximumOfflineAge
                 || !string.Equals(cached.Username, username.Trim(), StringComparison.OrdinalIgnoreCase)
                 || !string.Equals(cached.Role, "Transcriber", StringComparison.OrdinalIgnoreCase)
                 || !PasswordHasher.Verify(password, cached.PasswordHash))
@@ -86,6 +83,5 @@ public sealed class OfflineCredentialCache
         public string Gender { get; init; } = string.Empty;
         public string Role { get; init; } = string.Empty;
         public string PasswordHash { get; init; } = string.Empty;
-        public DateTime SavedAtUtc { get; init; }
     }
 }

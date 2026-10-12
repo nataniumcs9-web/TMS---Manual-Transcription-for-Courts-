@@ -12,8 +12,8 @@ public partial class DashboardViewModel : ObservableObject
 {
     private readonly DatabaseService _databaseService = new();
     private readonly LocalAudioAssignmentService _localAudioService = new();
+    private readonly OfflineSyncService _syncService = new();
     private readonly SemaphoreSlim _loadLock = new(1, 1);
-    private List<Record> _lastServerRecords = new();
     private string? _lastSnapshot;
     private string _searchText = string.Empty;
 
@@ -77,30 +77,71 @@ public partial class DashboardViewModel : ObservableObject
         try
         {
             var localRecords = await _localAudioService.LoadForUserAsync(CurrentUser.Username);
-            if (CurrentUser.IsOfflineSignIn || _lastServerRecords.Count == 0)
-            {
-                ApplyRecords(_lastServerRecords.Concat(localRecords).ToList());
-            }
             var isOnline = true;
             List<Record> serverRecords;
+            var syncedAny = false;
             try
             {
                 serverRecords = await _databaseService.GetRecordsForUserAsync(CurrentUser.Username);
+                foreach (var serverRecord in serverRecords)
+                {
+                    await _localAudioService.RefreshOfflineAvailabilityAsync(serverRecord);
+                }
+
+                foreach (var localRecord in localRecords.Where(record => record.HasPendingSync))
+                {
+                    try
+                    {
+                        syncedAny |= await _syncService.SyncRecordAsync(localRecord, CurrentUser.Username);
+                    }
+                    catch (Exception ex)
+                    {
+                        isOnline = false;
+                        Serilog.Log.Warning(ex, "Could not sync offline changes for record {RecordId}", localRecord.Id);
+                    }
+                }
+
+                if (syncedAny)
+                {
+                    serverRecords = await _databaseService.GetRecordsForUserAsync(CurrentUser.Username);
+                }
             }
             catch (Exception ex)
             {
                 isOnline = false;
                 serverRecords = new List<Record>();
-                Serilog.Log.Warning(ex, "Server assignments unavailable for {Username}; showing local audio assignments", CurrentUser.Username);
+                Serilog.Log.Warning(ex, "Server assignments unavailable for {Username}; showing offline assignments", CurrentUser.Username);
             }
 
-            var records = serverRecords.Concat(localRecords).ToList();
-            _lastServerRecords = serverRecords;
+            var cachedRecords = localRecords.ToDictionary(record => record.Id);
+            var records = serverRecords.Select(serverRecord =>
+            {
+                if (!cachedRecords.TryGetValue(serverRecord.Id, out var cachedRecord))
+                {
+                    return serverRecord;
+                }
+
+                serverRecord.HasPendingSync = cachedRecord.HasPendingSync;
+                if (cachedRecord.HasPendingSync)
+                {
+                    serverRecord.Status = cachedRecord.Status;
+                    serverRecord.Remark = cachedRecord.Remark;
+                    serverRecord.FinishedDate = cachedRecord.FinishedDate;
+                    serverRecord.AudioPositionSeconds = cachedRecord.AudioPositionSeconds;
+                }
+
+                return serverRecord;
+            }).ToList();
+            var serverIds = records.Select(record => record.Id).ToHashSet();
+            records.AddRange(localRecords.Where(record => !serverIds.Contains(record.Id)));
             ApplyRecords(records);
 
+            var pendingSyncCount = localRecords.Count(record => record.HasPendingSync);
             LastUpdatedText = isOnline
-                ? $"Connected · checked {DateTime.Now:t}"
-                : $"No connection · local audio available · checked {DateTime.Now:t}";
+                ? pendingSyncCount == 0
+                    ? $"Connected · checked {DateTime.Now:t}"
+                    : $"Connected · {pendingSyncCount} change(s) waiting to sync · checked {DateTime.Now:t}"
+                : $"No connection · offline records available · checked {DateTime.Now:t}";
         }
         finally
         {
@@ -127,10 +168,18 @@ public partial class DashboardViewModel : ObservableObject
             return;
         }
 
-        ReplaceRecords(AssignedRecords, records.Where(record => record.Status == "Assigned"));
-        ReplaceRecords(PendingRecords, records.Where(record => record.Status == "Pending"));
-        ReplaceRecords(SuspendedRecords, records.Where(record => record.Status == "Suspended"));
-        ReplaceRecords(FinishedRecords, records.Where(record => record.Status == "Finished"));
+        var assigned = records.Where(record => record.Status == "Assigned").ToList();
+        var pending = records.Where(record => record.Status == "Pending").ToList();
+        var suspended = records.Where(record => record.Status == "Suspended").ToList();
+        var finished = records.Where(record => record.Status == "Finished").ToList();
+        SetLocalRollNumbers(assigned);
+        SetLocalRollNumbers(pending);
+        SetLocalRollNumbers(suspended);
+        SetLocalRollNumbers(finished);
+        ReplaceRecords(AssignedRecords, assigned);
+        ReplaceRecords(PendingRecords, pending);
+        ReplaceRecords(SuspendedRecords, suspended);
+        ReplaceRecords(FinishedRecords, finished);
         _lastSnapshot = snapshot;
         OnPropertyChanged(nameof(InProgressCount));
         OnPropertyChanged(nameof(AppointmentPassedCount));
@@ -201,6 +250,14 @@ public partial class DashboardViewModel : ObservableObject
         foreach (var record in records)
         {
             target.Add(record);
+        }
+    }
+
+    private static void SetLocalRollNumbers(IReadOnlyList<Record> records)
+    {
+        for (var index = 0; index < records.Count; index++)
+        {
+            records[index].LocalRollNumber = index + 1;
         }
     }
 

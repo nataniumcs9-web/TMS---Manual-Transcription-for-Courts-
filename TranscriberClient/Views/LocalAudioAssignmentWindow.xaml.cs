@@ -15,13 +15,18 @@ public partial class LocalAudioAssignmentWindow : Window
 
     private readonly LocalAudioAssignmentService _assignmentService = new();
     private readonly UserAccount _currentUser;
+    private readonly HashSet<int> _existingMachineNumbers;
     private string _sourcePath = string.Empty;
     public Record? CreatedRecord { get; private set; }
 
-    public LocalAudioAssignmentWindow(UserAccount currentUser)
+    public LocalAudioAssignmentWindow(UserAccount currentUser, IEnumerable<Record> existingRecords)
     {
         InitializeComponent();
         _currentUser = currentUser;
+        _existingMachineNumbers = existingRecords
+            .Select(record => record.MachineNum)
+            .Where(machineNumber => machineNumber > 0)
+            .ToHashSet();
         RecordedDateTextBox.Text = CalendarDateFormatter.FormatDate(DateTime.Today);
     }
 
@@ -58,13 +63,19 @@ public partial class LocalAudioAssignmentWindow : Window
             return;
         }
 
-        if (!int.TryParse(MachineNumberTextBox.Text.Trim(), out var machineNumber))
+        if (!int.TryParse(MachineNumberTextBox.Text.Trim(), out var machineNumber)
+            || machineNumber is < 1 or > 999999)
         {
-            if (!string.IsNullOrWhiteSpace(MachineNumberTextBox.Text))
-            {
-                ShowValidation("Enter a valid machine number or leave it blank.");
-                return;
-            }
+            ShowValidation("Enter a five- or six-digit machine number. A leading zero will be added to five-digit numbers.");
+            MachineNumberTextBox.Focus();
+            return;
+        }
+
+        if (_existingMachineNumbers.Contains(machineNumber))
+        {
+            ShowValidation($"Machine number {machineNumber:D6} already exists in your collection.");
+            MachineNumberTextBox.Focus();
+            return;
         }
 
         var applicant = ApplicantTextBox.Text.Trim();

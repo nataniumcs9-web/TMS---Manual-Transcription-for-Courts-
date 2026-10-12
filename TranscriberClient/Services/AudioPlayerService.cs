@@ -115,14 +115,14 @@ public class AudioPlayerService : IDisposable
         PositionChanged?.Invoke(this, target);
     }
 
-    public void Rewind()
+    public void Rewind(int seconds = 3)
     {
-        Seek(CurrentPositionSeconds - 3d);
+        Seek(CurrentPositionSeconds - Math.Clamp(seconds, 1, 10));
     }
 
-    public void Forward()
+    public void Forward(int seconds = 3)
     {
-        Seek(CurrentPositionSeconds + 3d);
+        Seek(CurrentPositionSeconds + Math.Clamp(seconds, 1, 10));
     }
 
     public void Dispose()

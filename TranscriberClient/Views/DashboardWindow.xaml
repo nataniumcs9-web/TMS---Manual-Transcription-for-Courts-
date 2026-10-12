@@ -3,89 +3,146 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Court Transcriber | Dashboard" Icon="/Assets/gzhc.ico" Width="1420" Height="820" MinWidth="980" MinHeight="650"
         WindowStartupLocation="CenterScreen" ResizeMode="CanResize">
-    <Grid Margin="18">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter"/>
+        <Style x:Key="HeaderActionButtonStyle" TargetType="{x:Type Button}" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="Margin" Value="0,0,6,0"/>
+            <Setter Property="Background" Value="#294F75"/>
+            <Setter Property="FontSize" Value="11"/>
+        </Style>
+        <DataTemplate x:Key="OfflineActionCellTemplate">
+            <Grid Margin="3,0">
+                <Button x:Name="OfflineActionButton" Content="{Binding OfflineCopyButtonLabel}"
+                        ToolTip="{Binding OfflineCopyToolTip}" FontFamily="Segoe MDL2 Assets" FontSize="15"
+                        Height="28" Width="48" Padding="0" Margin="0"
+                        Style="{DynamicResource OfflineActionButtonStyle}" Click="DownloadOfflineCopyButton_Click"/>
+                <Grid x:Name="OfflineProgressPanel" Visibility="Collapsed" Height="28">
+                    <ProgressBar Value="{Binding OfflineDownloadProgress}" Maximum="100"
+                                 Foreground="{StaticResource AccentBrush}" Background="#E5EDF3"/>
+                    <TextBlock Text="{Binding OfflineDownloadProgress, StringFormat={}{0:0}%}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="10"
+                               FontWeight="Bold" Foreground="{StaticResource BrandDarkBrush}"/>
+                </Grid>
+            </Grid>
+            <DataTemplate.Triggers>
+                <DataTrigger Binding="{Binding IsOfflineDownloadInProgress}" Value="True">
+                    <Setter TargetName="OfflineActionButton" Property="Visibility" Value="Collapsed"/>
+                    <Setter TargetName="OfflineProgressPanel" Property="Visibility" Value="Visible"/>
+                </DataTrigger>
+            </DataTemplate.Triggers>
+        </DataTemplate>
+        <Style x:Key="OfflineActionButtonStyle" TargetType="{x:Type Button}" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="Background" Value="#167D8D"/>
+            <Style.Triggers>
+                <MultiDataTrigger>
+                    <MultiDataTrigger.Conditions>
+                        <Condition Binding="{Binding IsOfflineInfoDownloaded}" Value="True"/>
+                        <Condition Binding="{Binding HasOfflineAudio}" Value="True"/>
+                    </MultiDataTrigger.Conditions>
+                    <Setter Property="Background" Value="#287A58"/>
+                </MultiDataTrigger>
+                <DataTrigger Binding="{Binding IsOfflineDownloadInProgress}" Value="True">
+                    <Setter Property="Background" Value="#A36C16"/>
+                    <Setter Property="IsEnabled" Value="False"/>
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+        <Style x:Key="WorkActionButtonStyle" TargetType="{x:Type Button}" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Padding" Value="7,0"/>
+            <Setter Property="Margin" Value="0"/>
+            <Setter Property="Background" Value="{StaticResource BrandBrush}"/>
+            <Setter Property="FontSize" Value="11"/>
+        </Style>
+        <Style x:Key="SearchToggleButtonStyle" TargetType="{x:Type Button}" BasedOn="{StaticResource {x:Type Button}}">
+            <Setter Property="Width" Value="34"/>
+            <Setter Property="Height" Value="30"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Margin" Value="8,0,0,0"/>
+            <Setter Property="Background" Value="{StaticResource BrandBrush}"/>
+            <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+            <Setter Property="FontSize" Value="14"/>
+        </Style>
+    </Window.Resources>
+    <Grid Margin="14,10">
         <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <Border Grid.Row="0" Background="{StaticResource BrandBrush}" CornerRadius="9" Padding="16,10" Margin="0,0,0,10">
+        <Border Grid.Row="0" Background="{StaticResource BrandBrush}" CornerRadius="8" Padding="10,6" Margin="0,0,0,5">
             <Grid>
                 <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="245"/>
                     <ColumnDefinition Width="*"/>
                     <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
                 <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                    <Border Width="46" Height="46" Background="White" CornerRadius="23" Padding="5" Margin="0,0,12,0">
+                    <Border Width="34" Height="34" Background="White" CornerRadius="17" Padding="4" Margin="0,0,9,0">
                         <Image Source="/Assets/logo.png" Stretch="Uniform"/>
                     </Border>
                     <StackPanel VerticalAlignment="Center">
-                        <TextBlock Text="GEDEO ZONE HIGH COURT" Foreground="#B9D8E4" FontSize="10" FontWeight="Bold"/>
-                        <TextBlock Text="የጌዴኦ ዞን ከፍተኛ ፍርድ ቤት" Foreground="#D8E7EF" FontSize="13" FontFamily="Nyala"/>
-                        <TextBlock Text="{Binding CurrentUser.FullName}" Foreground="White" FontSize="15" FontWeight="SemiBold"/>
+                        <TextBlock Text="GEDEO ZONE HIGH COURT" Foreground="#B9D8E4" FontSize="9" FontWeight="Bold"/>
+                        <TextBlock Text="{Binding CurrentUser.FullName}" Foreground="White" FontSize="13" FontWeight="SemiBold"/>
                     </StackPanel>
                 </StackPanel>
-                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                    <Button Content="Add local audio" Background="{StaticResource AccentBrush}" Click="AddLocalAudioButton_Click"/>
-                    <Button Content="Reports" Background="White" Foreground="{StaticResource BrandBrush}" Click="ReportsButton_Click"/>
-                    <Button Content="User settings" Background="White" Foreground="{StaticResource BrandBrush}" Click="UserSettingsButton_Click"/>
-                    <Button Content="Sign out" Background="#EAF0F6" Foreground="{StaticResource BrandBrush}" Margin="0" Click="LogoutButton_Click"/>
+                <UniformGrid Grid.Column="1" Columns="5" VerticalAlignment="Center" Margin="5,0,9,0">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"><TextBlock Text="{Binding AssignedRecords.Count}" Foreground="White" FontWeight="Bold" Margin="0,0,4,0"/><TextBlock Text="Assigned" Foreground="#D8E7EF" FontSize="10"/></StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"><TextBlock Text="{Binding InProgressCount}" Foreground="White" FontWeight="Bold" Margin="0,0,4,0"/><TextBlock Text="In progress" Foreground="#D8E7EF" FontSize="10"/></StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"><TextBlock Text="{Binding AppointmentPassedCount}" Foreground="#FFD9C9" FontWeight="Bold" Margin="0,0,4,0"/><TextBlock Text="Overdue" Foreground="#D8E7EF" FontSize="10"/></StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"><TextBlock Text="{Binding AppointmentTodayCount}" Foreground="#FFE5A8" FontWeight="Bold" Margin="0,0,4,0"/><TextBlock Text="Today" Foreground="#D8E7EF" FontSize="10"/></StackPanel>
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center"><TextBlock Text="{Binding FinishedRecords.Count}" Foreground="#BCE7CA" FontWeight="Bold" Margin="0,0,4,0"/><TextBlock Text="Finished" Foreground="#D8E7EF" FontSize="10"/></StackPanel>
+                </UniformGrid>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="+ Add audio" Style="{StaticResource HeaderActionButtonStyle}" Background="{StaticResource AccentBrush}" Click="AddLocalAudioButton_Click"/>
+                    <Button Content="Reports" Style="{StaticResource HeaderActionButtonStyle}" Background="#FFFFFF" Foreground="{StaticResource BrandBrush}" Click="ReportsButton_Click"/>
+                    <Button Content="Settings" Style="{StaticResource HeaderActionButtonStyle}" Background="#FFFFFF" Foreground="{StaticResource BrandBrush}" Click="UserSettingsButton_Click"/>
+                    <Button Content="Sign out" Style="{StaticResource HeaderActionButtonStyle}" Background="#EAF0F6" Foreground="{StaticResource BrandBrush}" Margin="0" Click="LogoutButton_Click"/>
                 </StackPanel>
             </Grid>
         </Border>
 
-        <UniformGrid Grid.Row="1" Columns="5" Margin="0,0,0,8">
-            <Border Background="White" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="7" Padding="10,7" Margin="0,0,7,0">
-                <StackPanel><TextBlock Text="ASSIGNED" FontSize="10" FontWeight="Bold" Foreground="{StaticResource MutedBrush}"/><TextBlock Text="{Binding AssignedRecords.Count}" FontSize="22" FontWeight="Bold" Foreground="{StaticResource BrandBrush}"/><TextBlock Text="Ready to start" FontSize="10" Foreground="{StaticResource MutedBrush}"/></StackPanel>
+        <Grid Grid.Row="1" Margin="0,0,0,5">
+            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+            <Border Background="#FFF9EE" BorderBrush="#F0D8A8" BorderThickness="1" CornerRadius="5" Padding="7,3">
+                <Grid>
+                    <Grid x:Name="RecommendationsPanel">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="160"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="WORK RECOMMENDATIONS" FontSize="9" FontWeight="Bold" Foreground="#7D571B" VerticalAlignment="Center"/>
+                        <ScrollViewer Grid.Column="1" MaxHeight="24" VerticalScrollBarVisibility="Auto">
+                            <ItemsControl ItemsSource="{Binding Recommendations}">
+                                <ItemsControl.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" TextTrimming="CharacterEllipsis" Margin="0,1" Foreground="#38485A" FontSize="10"/></DataTemplate></ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+                    <Grid x:Name="SearchPanel" Visibility="Collapsed" PreviewMouseDown="SearchPanel_PreviewMouseDown">
+                        <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
+                        <TextBlock Text="SEARCH" VerticalAlignment="Center" FontWeight="SemiBold" FontSize="9" Foreground="{StaticResource MutedBrush}" Margin="0,0,9,0"/>
+                        <TextBox Grid.Column="1" x:Name="SearchTextBox" Height="28" VerticalContentAlignment="Center"
+                                 ToolTip="Search file or machine number, case names, witnesses, judge, recorder, status, notes, and dates"
+                                 TextChanged="SearchTextBox_TextChanged" PreviewKeyDown="SearchTextBox_PreviewKeyDown"/>
+                        <TextBlock Grid.Column="2" Text="{Binding LastUpdatedText}" Foreground="{StaticResource MutedBrush}" FontSize="9"
+                                   Margin="9,0,0,0" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                    </Grid>
+                </Grid>
             </Border>
-            <Border Background="White" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="7" Padding="10,7" Margin="0,0,7,0">
-                <StackPanel><TextBlock Text="IN PROGRESS" FontSize="10" FontWeight="Bold" Foreground="{StaticResource MutedBrush}"/><TextBlock Text="{Binding InProgressCount}" FontSize="22" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/><TextBlock Text="Pending transcripts" FontSize="10" Foreground="{StaticResource MutedBrush}"/></StackPanel>
-            </Border>
-            <Border Background="White" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="7" Padding="10,7" Margin="0,0,7,0">
-                <StackPanel><TextBlock Text="APPOINTMENT PASSED" FontSize="10" FontWeight="Bold" Foreground="{StaticResource MutedBrush}"/><TextBlock Text="{Binding AppointmentPassedCount}" FontSize="22" FontWeight="Bold" Foreground="#B54738"/><TextBlock Text="Active files to review" FontSize="10" Foreground="{StaticResource MutedBrush}"/></StackPanel>
-            </Border>
-            <Border Background="White" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="7" Padding="10,7" Margin="0,0,7,0">
-                <StackPanel><TextBlock Text="APPOINTMENTS TODAY" FontSize="10" FontWeight="Bold" Foreground="{StaticResource MutedBrush}"/><TextBlock Text="{Binding AppointmentTodayCount}" FontSize="22" FontWeight="Bold" Foreground="#A76B13"/><TextBlock Text="Check case details" FontSize="10" Foreground="{StaticResource MutedBrush}"/></StackPanel>
-            </Border>
-            <Border Background="White" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="7" Padding="10,7">
-                <StackPanel><TextBlock Text="FINISHED" FontSize="10" FontWeight="Bold" Foreground="{StaticResource MutedBrush}"/><TextBlock Text="{Binding FinishedRecords.Count}" FontSize="22" FontWeight="Bold" Foreground="#32805B"/><TextBlock Text="Completed transcripts" FontSize="10" Foreground="{StaticResource MutedBrush}"/></StackPanel>
-            </Border>
-        </UniformGrid>
-
-        <Grid Grid.Row="2" Margin="0,0,0,8">
-            <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-            <TextBlock Text="Search all assignments" VerticalAlignment="Center" FontWeight="SemiBold" Margin="0,0,12,0"/>
-            <TextBox Grid.Column="1" x:Name="SearchTextBox" Height="36" VerticalContentAlignment="Center"
-                     ToolTip="Search file or machine number, case names, witnesses, judge, recorder, status, notes, and dates"
-                     TextChanged="SearchTextBox_TextChanged"/>
-            <StackPanel Grid.Column="2" Margin="12,0,0,0" VerticalAlignment="Center">
-                <TextBlock Text="{Binding LastUpdatedText}" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
-                <TextBlock Text="{Binding SearchResultCount, StringFormat={}{0} matching records}" Foreground="{StaticResource MutedBrush}" FontSize="10"/>
-            </StackPanel>
+            <Button x:Name="SearchToggleButton" Grid.Column="1" Content="&#xE721;" ToolTip="Search assignments"
+                    Style="{StaticResource SearchToggleButtonStyle}" Click="SearchToggleButton_Click"/>
         </Grid>
 
-        <Border Grid.Row="3" Background="#FFF9EE" BorderBrush="#F0D8A8" BorderThickness="1" CornerRadius="7" Padding="9" Margin="0,0,0,8">
-            <Grid>
-                <Grid.ColumnDefinitions><ColumnDefinition Width="190"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                <StackPanel Margin="0,0,10,0"><TextBlock Text="WORK RECOMMENDATIONS" FontSize="10" FontWeight="Bold" Foreground="#7D571B"/><TextBlock Text="Appointment reminders" FontSize="10" Foreground="{StaticResource MutedBrush}"/></StackPanel>
-                <ScrollViewer Grid.Column="1" MaxHeight="48" VerticalScrollBarVisibility="Auto">
-                    <ItemsControl ItemsSource="{Binding Recommendations}">
-                        <ItemsControl.ItemTemplate><DataTemplate><TextBlock Text="{Binding}" TextWrapping="Wrap" Margin="0,1" Foreground="#38485A" FontSize="11"/></DataTemplate></ItemsControl.ItemTemplate>
-                    </ItemsControl>
-                </ScrollViewer>
-            </Grid>
-        </Border>
-
-        <Border Grid.Row="4" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="7">
+        <Border Grid.Row="2" Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="8" Padding="7">
             <TabControl Background="White" BorderThickness="0">
                 <TabItem Header="Assigned">
-                    <DataGrid x:Name="AssignedGrid" AutoGenerateColumns="False" ItemsSource="{Binding AssignedView}" IsReadOnly="True" CanUserAddRows="False" CanUserSortColumns="True" RowHeight="30">
+                    <DataGrid x:Name="AssignedGrid" AutoGenerateColumns="False" ItemsSource="{Binding AssignedView}" IsReadOnly="True" CanUserAddRows="False" CanUserSortColumns="True">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="R.N" Binding="{Binding Id}" Width="55"/>
+                            <DataGridTextColumn Header="R.N" Binding="{Binding LocalRollNumber}" Width="55"/>
                             <DataGridTextColumn Header="File #" Binding="{Binding FileNum}" Width="75"/>
                             <DataGridTextColumn Header="Machine #" Binding="{Binding MachineNum}" Width="85"/>
                             <DataGridTextColumn Header="Applicant" Binding="{Binding Applicant}" Width="1.2*"/>
@@ -95,26 +152,36 @@
                             <DataGridTextColumn Header="Appointment" Binding="{Binding AppointedOn, Converter={StaticResource CalendarDateConverter}}" Width="125"/>
                             <DataGridTextColumn Header="Audio" Binding="{Binding AudioStatus}" Width="110"/>
                             <DataGridTextColumn Header="Notes" Binding="{Binding Remark}" Width="1.2*"/>
-                            <DataGridTemplateColumn Header="" Width="105"><DataGridTemplateColumn.CellTemplate><DataTemplate><Button Content="Start work" Margin="4,0" Height="26" Click="StartWorkButton_Click"/></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Offline" Width="72" CellTemplate="{StaticResource OfflineActionCellTemplate}"/>
+                            <DataGridTemplateColumn Header="Work" Width="102"><DataGridTemplateColumn.CellTemplate><DataTemplate>
+                                <Button Style="{StaticResource WorkActionButtonStyle}" Click="StartWorkButton_Click">
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE768;" FontFamily="Segoe MDL2 Assets" Margin="0,0,6,0"/><TextBlock Text="Start work"/></StackPanel>
+                                </Button>
+                            </DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                 </TabItem>
                 <TabItem Header="In progress">
-                    <DataGrid x:Name="PendingGrid" AutoGenerateColumns="False" ItemsSource="{Binding PendingView}" IsReadOnly="True" CanUserAddRows="False" CanUserSortColumns="True" RowHeight="30">
+                    <DataGrid x:Name="PendingGrid" AutoGenerateColumns="False" ItemsSource="{Binding PendingView}" IsReadOnly="True" CanUserAddRows="False" CanUserSortColumns="True">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="R.N" Binding="{Binding Id}" Width="55"/><DataGridTextColumn Header="File #" Binding="{Binding FileNum}" Width="75"/><DataGridTextColumn Header="Machine #" Binding="{Binding MachineNum}" Width="85"/>
+                            <DataGridTextColumn Header="R.N" Binding="{Binding LocalRollNumber}" Width="55"/><DataGridTextColumn Header="File #" Binding="{Binding FileNum}" Width="75"/><DataGridTextColumn Header="Machine #" Binding="{Binding MachineNum}" Width="85"/>
                             <DataGridTextColumn Header="Applicant" Binding="{Binding Applicant}" Width="1.2*"/><DataGridTextColumn Header="Defendant" Binding="{Binding Defendant}" Width="1.2*"/>
                             <DataGridTextColumn Header="Witness type" Binding="{Binding WitnessType}" Width="105"/><DataGridTextColumn Header="Recorded" Binding="{Binding RecDate, Converter={StaticResource CalendarDateConverter}}" Width="115"/>
                             <DataGridTextColumn Header="Appointment" Binding="{Binding AppointedOn, Converter={StaticResource CalendarDateConverter}}" Width="125"/><DataGridTextColumn Header="Audio" Binding="{Binding AudioStatus}" Width="110"/>
                             <DataGridTextColumn Header="Notes" Binding="{Binding Remark}" Width="1.2*"/>
-                            <DataGridTemplateColumn Header="" Width="105"><DataGridTemplateColumn.CellTemplate><DataTemplate><Button Content="Continue" Margin="4,0" Height="26" Click="StartWorkButton_Click"/></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Offline" Width="72" CellTemplate="{StaticResource OfflineActionCellTemplate}"/>
+                            <DataGridTemplateColumn Header="Work" Width="102"><DataGridTemplateColumn.CellTemplate><DataTemplate>
+                                <Button Style="{StaticResource WorkActionButtonStyle}" Click="StartWorkButton_Click">
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE768;" FontFamily="Segoe MDL2 Assets" Margin="0,0,6,0"/><TextBlock Text="Continue"/></StackPanel>
+                                </Button>
+                            </DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                 </TabItem>
                 <TabItem Header="Suspended">
-                    <DataGrid x:Name="SuspendedGrid" AutoGenerateColumns="False" ItemsSource="{Binding SuspendedView}" IsReadOnly="True" CanUserAddRows="False" CanUserSortColumns="True" RowHeight="30">
+                    <DataGrid x:Name="SuspendedGrid" AutoGenerateColumns="False" ItemsSource="{Binding SuspendedView}" IsReadOnly="True" CanUserAddRows="False" CanUserSortColumns="True">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="R.N" Binding="{Binding Id}" Width="55"/><DataGridTextColumn Header="File #" Binding="{Binding FileNum}" Width="75"/><DataGridTextColumn Header="Machine #" Binding="{Binding MachineNum}" Width="85"/>
+                            <DataGridTextColumn Header="R.N" Binding="{Binding LocalRollNumber}" Width="55"/><DataGridTextColumn Header="File #" Binding="{Binding FileNum}" Width="75"/><DataGridTextColumn Header="Machine #" Binding="{Binding MachineNum}" Width="85"/>
                             <DataGridTextColumn Header="Applicant" Binding="{Binding Applicant}" Width="1.2*"/><DataGridTextColumn Header="Defendant" Binding="{Binding Defendant}" Width="1.2*"/>
                             <DataGridTextColumn Header="Recorded" Binding="{Binding RecDate, Converter={StaticResource CalendarDateConverter}}" Width="115"/><DataGridTextColumn Header="Appointment" Binding="{Binding AppointedOn, Converter={StaticResource CalendarDateConverter}}" Width="125"/>
                             <DataGridTextColumn Header="Audio" Binding="{Binding AudioStatus}" Width="110"/><DataGridTextColumn Header="Notes" Binding="{Binding Remark}" Width="1.5*"/>
@@ -123,23 +190,27 @@
                     </DataGrid>
                 </TabItem>
                 <TabItem Header="Finished">
-                    <DataGrid x:Name="FinishedGrid" AutoGenerateColumns="False" ItemsSource="{Binding FinishedView}" IsReadOnly="True" CanUserAddRows="False" CanUserSortColumns="True" RowHeight="30"
+                    <DataGrid x:Name="FinishedGrid" AutoGenerateColumns="False" ItemsSource="{Binding FinishedView}" IsReadOnly="True" CanUserAddRows="False" CanUserSortColumns="True"
                               PreviewMouseLeftButtonDown="FinishedGrid_PreviewMouseLeftButtonDown">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="R.N" Binding="{Binding Id}" Width="55"/><DataGridTextColumn Header="File #" Binding="{Binding FileNum}" Width="75"/><DataGridTextColumn Header="Machine #" Binding="{Binding MachineNum}" Width="85"/>
+                            <DataGridTextColumn Header="R.N" Binding="{Binding LocalRollNumber}" Width="55"/><DataGridTextColumn Header="File #" Binding="{Binding FileNum}" Width="75"/><DataGridTextColumn Header="Machine #" Binding="{Binding MachineNum}" Width="85"/>
                             <DataGridTextColumn Header="Applicant" Binding="{Binding Applicant}" Width="1.2*"/><DataGridTextColumn Header="Defendant" Binding="{Binding Defendant}" Width="1.2*"/>
                             <DataGridTextColumn Header="Witness type" Binding="{Binding WitnessType}" Width="105"/><DataGridTextColumn Header="Recorded" Binding="{Binding RecDate, Converter={StaticResource CalendarDateConverter}}" Width="115"/>
                             <DataGridTextColumn Header="Appointment" Binding="{Binding AppointedOn, Converter={StaticResource CalendarDateConverter}}" Width="125"/><DataGridTextColumn Header="Finished" Binding="{Binding FinishedDate, Converter={StaticResource CalendarDateConverter}}" Width="115"/>
                             <DataGridTextColumn Header="Audio" Binding="{Binding AudioStatus}" Width="110"/><DataGridTextColumn Header="Notes" Binding="{Binding Remark}" Width="1.5*"/>
-                            <DataGridTemplateColumn Header="" Width="140"><DataGridTemplateColumn.CellTemplate><DataTemplate><Button Content="Return to pending" Margin="4,0" Height="26" Click="ReturnToPendingButton_Click"/></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
-                            <DataGridTemplateColumn Header="Document" Width="90"><DataGridTemplateColumn.CellTemplate><DataTemplate><Button Content="Open" Margin="4,0" Height="26" Click="OpenFinishedDocumentButton_Click"/></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+                            <DataGridTemplateColumn Header="Offline" Width="72" CellTemplate="{StaticResource OfflineActionCellTemplate}"/>
+                            <DataGridTemplateColumn Header="Finished file" Width="90"><DataGridTemplateColumn.CellTemplate><DataTemplate>
+                                <Button Style="{StaticResource WorkActionButtonStyle}" ToolTip="Open transcript and audio" Click="OpenFinishedDocumentButton_Click">
+                                    <StackPanel Orientation="Horizontal"><TextBlock Text="&#xE8A5;" FontFamily="Segoe MDL2 Assets" Margin="0,0,6,0"/><TextBlock Text="Open"/></StackPanel>
+                                </Button>
+                            </DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
                         </DataGrid.Columns>
                     </DataGrid>
                 </TabItem>
             </TabControl>
         </Border>
 
-        <TextBlock Grid.Row="5" Text="Developed by Natnael Abebe" FontSize="9" Foreground="{StaticResource MutedBrush}"
+        <TextBlock Grid.Row="3" Text="{Binding SearchResultCount, StringFormat={}{0} matching records · Developed by Natnael Abebe}" FontSize="9" Foreground="{StaticResource MutedBrush}"
                    HorizontalAlignment="Right" Margin="0,6,2,0"/>
     </Grid>
 </Window>

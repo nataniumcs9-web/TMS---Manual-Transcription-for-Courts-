@@ -14,6 +14,7 @@ public partial class TranscriptionWindow : Window
     private readonly Record _record;
     private readonly DatabaseService _databaseService = new();
     private readonly LocalAudioAssignmentService _localAudioAssignmentService = new();
+    private readonly OfflineSyncService _offlineSyncService = new();
     private readonly AudioPlayerService _audioPlayerService = new();
     private readonly WordDocumentService _wordDocumentService = new();
     private readonly PedalService _pedalService = new();
@@ -29,12 +30,14 @@ public partial class TranscriptionWindow : Window
     private bool _isSavingAudioPosition;
     private bool _audioSaveWarningShown;
     private bool _isInitializingPreferences = true;
+    private readonly bool _openExistingDocumentOnly;
     private string? _openedDocumentPath;
 
-    public TranscriptionWindow(Record record, UserAccount currentUser)
+    public TranscriptionWindow(Record record, UserAccount currentUser, bool openExistingDocumentOnly = false)
     {
         InitializeComponent();
         _record = record;
+        _openExistingDocumentOnly = openExistingDocumentOnly;
         AlwaysOnTopCheckBox.IsChecked = AppSettings.UiPreferences.MiniWindowAlwaysOnTop;
         Topmost = AlwaysOnTopCheckBox.IsChecked == true;
         _isInitializingPreferences = false;
@@ -42,7 +45,11 @@ public partial class TranscriptionWindow : Window
         DataContext = new TranscriptionViewModel(record, currentUser);
         Title = $"Transcription — {record.MachineNum}";
         _isUpdatingStatus = true;
-        StatusComboBox.SelectedIndex = record.Status == "Suspended" ? 1 : 0;
+        StatusComboBox.SelectedItem = StatusComboBox.Items
+            .OfType<ComboBoxItem>()
+            .FirstOrDefault(item => string.Equals(item.Content?.ToString(), record.Status, StringComparison.OrdinalIgnoreCase))
+            ?? StatusComboBox.Items.OfType<ComboBoxItem>().First();
+        StatusComboBox.IsEnabled = !string.Equals(record.Status, "Finished", StringComparison.OrdinalIgnoreCase);
         _isUpdatingStatus = false;
 
         FileNumberRun.Text = record.FileNum.ToString();
@@ -64,6 +71,9 @@ public partial class TranscriptionWindow : Window
         _playbackTimer.Tick += PlaybackTimer_Tick;
         _audioPositionTimer.Interval = TimeSpan.FromSeconds(5);
         _audioPositionTimer.Tick += AudioPositionTimer_Tick;
+        var skipSeconds = Math.Clamp(AppSettings.UiPreferences.AudioSkipSeconds, 1, 10);
+        RewindButton.Content = $"−{skipSeconds} sec";
+        ForwardButton.Content = $"+{skipSeconds} sec";
         _isWindowInitialized = true;
         Loaded += TranscriptionWindow_Loaded;
         Closing += TranscriptionWindow_Closing;
@@ -87,21 +97,29 @@ public partial class TranscriptionWindow : Window
 
         try
         {
-            if (string.Equals(_record.AudioStatus, "Local audio", StringComparison.OrdinalIgnoreCase))
+            if (!_record.HasOfflineAudio)
             {
-                await _audioPlayerService.LoadFromLocalAudioAsync(_record.Audio);
-            }
-            else
-            {
-                var audioUrl = AppSettings.AudioBaseUrl + _record.Audio;
-                await _audioPlayerService.LoadFromUrlAsync(audioUrl);
+                throw new InvalidOperationException("Download the audio before opening this assignment for offline work.");
             }
 
-            var savedPosition = _record.IsLocalOnly
-                ? _record.AudioPositionSeconds
-                : await _databaseService.LoadAudioProgressAsync(_record.MachineNum.ToString());
+            await _audioPlayerService.LoadFromFileAsync(_localAudioAssignmentService.GetLocalAudioPath(_record));
+            var savedPosition = _record.AudioPositionSeconds;
+            if (!_record.IsLocalOnly && !_record.HasPendingSync)
+            {
+                try
+                {
+                    savedPosition = await _databaseService.LoadAudioProgressAsync(_record.MachineNum.ToString());
+                }
+                catch (Exception ex)
+                {
+                    Serilog.Log.Information(ex, "Using locally saved audio position for machine {MachineNumber}", _record.MachineNum);
+                }
+            }
+
+            _record.AudioPositionSeconds = savedPosition;
             _audioPlayerService.Seek(savedPosition);
             _audioLoaded = true;
+            _audioPositionTimer.Start();
 
             VolumeSlider.Value = 0.8;
             SeekSlider.Maximum = _audioPlayerService.TotalSeconds > 0 ? _audioPlayerService.TotalSeconds : 100;
@@ -145,12 +163,6 @@ public partial class TranscriptionWindow : Window
 
     private async void AudioPositionTimer_Tick(object? sender, EventArgs e)
     {
-        if (!_audioPlayerService.IsPlaying)
-        {
-            _audioPositionTimer.Stop();
-            return;
-        }
-
         await PersistAudioPositionAsync();
     }
 
@@ -164,16 +176,8 @@ public partial class TranscriptionWindow : Window
         _isSavingAudioPosition = true;
         try
         {
-            if (_record.IsLocalOnly)
-            {
-                await _localAudioAssignmentService.SaveAudioPositionAsync(_record, _audioPlayerService.CurrentPositionSeconds);
-            }
-            else
-            {
-                await _databaseService.SaveAudioProgressAsync(
-                    _record.MachineNum.ToString(),
-                    _audioPlayerService.CurrentPositionSeconds);
-            }
+            await _localAudioAssignmentService.SaveAudioPositionAsync(_record, _audioPlayerService.CurrentPositionSeconds);
+            await TrySyncOfflineProgressAsync();
             return true;
         }
         catch (Exception ex)
@@ -183,7 +187,7 @@ public partial class TranscriptionWindow : Window
             {
                 _audioSaveWarningShown = true;
                 MessageBox.Show(
-                    "Audio position could not be saved. Check the database connection. The app will keep retrying while audio plays.",
+                    "Audio position could not be saved locally. Check disk access before continuing.",
                     "Audio Progress",
                     MessageBoxButton.OK,
                     MessageBoxImage.Warning);
@@ -194,6 +198,18 @@ public partial class TranscriptionWindow : Window
         finally
         {
             _isSavingAudioPosition = false;
+        }
+    }
+
+    private async Task TrySyncOfflineProgressAsync()
+    {
+        try
+        {
+            await _offlineSyncService.SyncRecordAsync(_record, ((TranscriptionViewModel)DataContext).CurrentUser.Username);
+        }
+        catch (Exception ex)
+        {
+            Serilog.Log.Information(ex, "Offline progress remains queued for record {RecordId}", _record.Id);
         }
     }
 
@@ -221,14 +237,22 @@ public partial class TranscriptionWindow : Window
         if (_isCompact)
         {
             LayoutGrid.RowDefinitions[4].Height = GridLength.Auto;
-            MinHeight = 210;
-            MinWidth = 550;
-            Height = 225;
-            Width = 580;
+            AlwaysOnTopCheckBox.Visibility = Visibility.Collapsed;
+            PedalStatusBorder.Visibility = Visibility.Collapsed;
+            MiniSaveButton.Visibility = Visibility.Visible;
+            MiniExitButton.Visibility = Visibility.Visible;
+            MinHeight = 220;
+            MinWidth = 650;
+            Height = 245;
+            Width = 680;
         }
         else
         {
             LayoutGrid.RowDefinitions[4].Height = new GridLength(1, GridUnitType.Star);
+            AlwaysOnTopCheckBox.Visibility = Visibility.Visible;
+            PedalStatusBorder.Visibility = Visibility.Visible;
+            MiniSaveButton.Visibility = Visibility.Collapsed;
+            MiniExitButton.Visibility = Visibility.Collapsed;
             MinHeight = 500;
             MinWidth = 660;
             Height = 550;
@@ -273,13 +297,13 @@ public partial class TranscriptionWindow : Window
 
     private void RewindButton_Click(object sender, RoutedEventArgs e)
     {
-        _audioPlayerService.Rewind();
+        _audioPlayerService.Rewind(AppSettings.UiPreferences.AudioSkipSeconds);
         UpdateTimeLabel();
     }
 
     private void ForwardButton_Click(object sender, RoutedEventArgs e)
     {
-        _audioPlayerService.Forward();
+        _audioPlayerService.Forward(AppSettings.UiPreferences.AudioSkipSeconds);
         UpdateTimeLabel();
     }
 
@@ -289,7 +313,6 @@ public partial class TranscriptionWindow : Window
         {
             _audioPlayerService.Pause();
             _playbackTimer.Stop();
-            _audioPositionTimer.Stop();
             _ = PersistAudioPositionAsync();
             PlayPauseButton.Content = "▶ Play";
             return;
@@ -333,15 +356,8 @@ public partial class TranscriptionWindow : Window
                 return;
             }
 
-            if (_record.IsLocalOnly)
-            {
-                await _localAudioAssignmentService.SaveStatusAsync(_record, "Finished", _record.Remark);
-            }
-            else
-            {
-                await _databaseService.UpdateRecordStatusAsync(_record.Id, "Finished", _record.Remark);
-                _record.Status = "Finished";
-            }
+            await _localAudioAssignmentService.SaveStatusAsync(_record, "Finished", _record.Remark);
+            await TrySyncOfflineProgressAsync();
 
             await CloseAfterSavingAsync();
         }
@@ -357,14 +373,8 @@ public partial class TranscriptionWindow : Window
         try
         {
             _record.Remark = RemarkText.Text;
-            if (_record.IsLocalOnly)
-            {
-                await _localAudioAssignmentService.SaveAudioPositionAsync(_record, _audioPlayerService.CurrentPositionSeconds);
-            }
-            else
-            {
-                await _databaseService.SaveAudioProgressAsync(_record.MachineNum.ToString(), _audioPlayerService.CurrentPositionSeconds);
-            }
+            await _localAudioAssignmentService.SaveAudioPositionAsync(_record, _audioPlayerService.CurrentPositionSeconds);
+            await TrySyncOfflineProgressAsync();
             if (_wordDocument != null)
             {
                 ((dynamic)_wordDocument).Save();
@@ -407,10 +417,14 @@ public partial class TranscriptionWindow : Window
             _record.FileNum.ToString(),
             _record.MachineNum.ToString());
         DocumentPathText.Text = _openedDocumentPath;
-        _wordDocument = _wordDocumentService.OpenOrCreateDocument(
-            _record.FileNum.ToString(),
-            _record.MachineNum.ToString(),
-            _record);
+        _wordDocument = _openExistingDocumentOnly
+            ? _wordDocumentService.OpenExistingDocument(
+                _record.FileNum.ToString(),
+                _record.MachineNum.ToString())
+            : _wordDocumentService.OpenOrCreateDocument(
+                _record.FileNum.ToString(),
+                _record.MachineNum.ToString(),
+                _record);
     }
 
     private void OpenDocumentsFolderButton_Click(object sender, RoutedEventArgs e)
@@ -493,14 +507,8 @@ public partial class TranscriptionWindow : Window
             _record.Status = selectedStatus;
             try
             {
-                if (_record.IsLocalOnly)
-                {
-                    await _localAudioAssignmentService.SaveStatusAsync(_record, selectedStatus, _record.Remark);
-                }
-                else
-                {
-                    await _databaseService.UpdateRecordStatusAsync(_record.Id, selectedStatus, _record.Remark);
-                }
+                await _localAudioAssignmentService.SaveStatusAsync(_record, selectedStatus, _record.Remark);
+                await TrySyncOfflineProgressAsync();
             }
             catch (Exception ex)
             {

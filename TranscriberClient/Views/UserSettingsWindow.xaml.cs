@@ -20,6 +20,11 @@ public partial class UserSettingsWindow : Window
         AlwaysOnTopCheckBox.IsChecked = preferences.DashboardAlwaysOnTop;
         CompactDashboardCheckBox.IsChecked = preferences.CompactDashboard;
         EthiopianCalendarCheckBox.IsChecked = preferences.UseEthiopianCalendar;
+        var skipSeconds = Math.Clamp(preferences.AudioSkipSeconds, 1, 10);
+        AudioSkipComboBox.SelectedItem = AudioSkipComboBox.Items
+            .OfType<ComboBoxItem>()
+            .FirstOrDefault(item => int.TryParse(item.Tag?.ToString(), out var seconds) && seconds == skipSeconds)
+            ?? AudioSkipComboBox.Items.OfType<ComboBoxItem>().First();
         var interval = Math.Clamp(preferences.AutoRefreshSeconds, 15, 300);
         RefreshIntervalComboBox.SelectedItem = RefreshIntervalComboBox.Items
             .OfType<ComboBoxItem>()
@@ -30,9 +35,11 @@ public partial class UserSettingsWindow : Window
     private void SaveSystemSettingsButton_Click(object sender, RoutedEventArgs e)
     {
         if (RefreshIntervalComboBox.SelectedItem is not ComboBoxItem selected
-            || !int.TryParse(selected.Tag?.ToString(), out var refreshSeconds))
+            || !int.TryParse(selected.Tag?.ToString(), out var refreshSeconds)
+            || AudioSkipComboBox.SelectedItem is not ComboBoxItem selectedSkip
+            || !int.TryParse(selectedSkip.Tag?.ToString(), out var skipSeconds))
         {
-            ShowResult("Choose a valid dashboard refresh interval.", isError: true);
+            ShowResult("Choose valid dashboard refresh and audio skip intervals.", isError: true);
             return;
         }
 
@@ -43,7 +50,8 @@ public partial class UserSettingsWindow : Window
                 DashboardAlwaysOnTop = AlwaysOnTopCheckBox.IsChecked == true,
                 CompactDashboard = CompactDashboardCheckBox.IsChecked == true,
                 AutoRefreshSeconds = refreshSeconds,
-                UseEthiopianCalendar = EthiopianCalendarCheckBox.IsChecked == true
+                UseEthiopianCalendar = EthiopianCalendarCheckBox.IsChecked == true,
+                AudioSkipSeconds = skipSeconds
             });
             ShowResult("System settings saved for this Windows user.", isError: false);
             DialogResult = true;
